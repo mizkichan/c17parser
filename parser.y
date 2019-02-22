@@ -8,6 +8,7 @@ extern auto add_typedef_name(std::string_view) -> void;
 
 %code requires {
 #include <cstdint>
+#include <iostream>
 }
 
 %code provides {
@@ -188,7 +189,7 @@ type_specifier: VOID | CHAR | SHORT | INT | LONG | FLOAT | DOUBLE | SIGNED | UNS
               | atomic_type_specifier
               | struct_or_union_specifier
               | enum_specifier
-              | typedef_name
+              | TYPEDEF_NAME
               ;
 
 struct_or_union_specifier: struct_or_union '{' struct_declaration_list '}'
@@ -270,8 +271,7 @@ direct_declarator: IDENTIFIER
                  | direct_declarator '(' identifier_list ')'
                  ;
 
-typedef_name: TYPEDEF_NAME
-            | IDENTIFIER  { add_typedef_name($1); }
+typedef_name: IDENTIFIER  { add_typedef_name($1); }
             ;
 
 pointer: '*'

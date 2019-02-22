@@ -9,7 +9,7 @@ all: main
 main: main.o lexer.o parser.o
 	$(CXX) $(LDFLAGS) $(LDLIBS) -o $@ $^
 
-main.o: main.cpp parser.hpp
+main.o: main.cpp lexer.hpp parser.hpp
 parser.o: parser.cpp lexer.hpp
 
 lexer.cpp lexer.hpp: lexer.l

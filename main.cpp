@@ -1,13 +1,47 @@
+#include "lexer.hpp"
 #include "parser.hpp"
+#include <cstring>
 #include <cstdlib>
 #include <iostream>
 #include <string_view>
 
+#include <unistd.h>
+
 extern int yy_flex_debug;
 
-extern auto main(void) -> int {
-  yy_flex_debug = 0;
-  yydebug = 0;
+extern auto main(int argc, char **argv) -> int {
+  int opt;
+  FILE *fp;
+
+  yy_flex_debug = yydebug = 0;
+
+  while ((opt = getopt(argc, argv, "o:v")) != -1) switch (opt) {
+    case 'o':
+      fp = std::fopen(optarg, "w");
+      if (!fp) {
+        std::cerr << optarg << ": " << std::strerror(errno) << std::endl;
+        return EXIT_FAILURE;
+      }
+      yyout = fp;
+      break;
+
+    case 'v':
+      yy_flex_debug = yydebug = 1;
+      break;
+
+    default:
+      std::cerr << "Usage: " << argv[0] << " [-v] [-o outfile] [infile]" << std::endl;
+      return EXIT_SUCCESS;
+  }
+
+  if (optind < argc) {
+    fp = std::fopen(argv[optind], "r");
+    if (!fp) {
+      std::cerr << argv[optind] << ": " << std::strerror(errno) << std::endl;
+      return EXIT_FAILURE;
+    }
+    yyin = fp;
+  }
 
   yyparse();
   return EXIT_SUCCESS;
