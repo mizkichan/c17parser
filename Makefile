@@ -1,5 +1,5 @@
-CFLAGS += -std=c17 -Wall -Wextra
-CPPFLAGS += -D_POSIX_C_SOURCE=200809L
+CXXFLAGS += -std=c++17 -Wall -Wextra
+CPPFLAGS +=
 LDFLAGS +=
 LDLIBS +=
 
@@ -7,15 +7,20 @@ LDLIBS +=
 all: main
 
 main: main.o lexer.o parser.o
-main.o: main.c parser.h
-parser.o: parser.c lexer.h
+	$(CXX) $(LDFLAGS) $(LDLIBS) -o $@ $^
 
-lexer.c lexer.h: lexer.l
-	flex --header-file=lexer.h -o lexer.c $<
+main.o: main.cpp parser.hpp
+parser.o: parser.cpp lexer.hpp
 
-parser.c parser.h: parser.y
-	bison -d -o parser.c $<
+lexer.cpp lexer.hpp: lexer.l
+	flex --header-file=lexer.hpp -o lexer.cpp $<
+
+parser.cpp parser.hpp: parser.y
+	bison -d -o parser.cpp $<
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 .PHONY: clean
 clean:
-	$(RM) main *.o lexer.c parser.c lexer.h parser.h
+	$(RM) main *.o lexer.cpp parser.cpp lexer.hpp parser.hpp

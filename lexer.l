@@ -1,27 +1,23 @@
 %{
-#include "parser.h"
-#include <stdbool.h>
-#include <assert.h>
+#include "parser.hpp"
+#include <algorithm>
+#include <cassert>
+#include <string>
+#include <string_view>
+#include <vector>
 
-#define YY_USER_ACTION { \
-  if (*yytext != '\n') { \
-    yylloc.first_column = yylloc.last_column; \
-    yylloc.last_column += yyleng; \
-  } \
+#define YY_USER_ACTION if (*yytext != '\n') { \
+  yylloc.first_column = yylloc.last_column; \
+  yylloc.last_column += yyleng; \
 }
 
-static char **enum_consts = NULL;
-static size_t enum_consts_count = 0;
-static size_t enum_consts_capacity = 0;
-static char **typedef_names = NULL;
-static size_t typedef_names_count = 0;
-static size_t typedef_names_capacity = 0;
+static auto check_type(std::string_view id) -> int;
+extern auto add_enumeration_constant(std::string_view id) -> void;
+extern auto add_typedef_name(std::string_view id) -> void;
+static auto is_enumeration_constant(std::string_view id) -> bool;
+static auto is_typedef_name(std::string_view id) -> bool;
 
-static int check_type(char const *);
-void add_enumeration_constant(char const *);
-void add_typedef_name(char const *);
-static bool is_enumeration_constant(char const *);
-static bool is_typedef_name(char const *);
+extern auto yyerror(std::string_view) -> void;
 %}
 
 %option debug
@@ -122,66 +118,33 @@ static bool is_typedef_name(char const *);
 
 %%
 
-int check_type(char const *const id) {
+static std::vector<std::string> enum_consts;
+static std::vector<std::string> typedef_names;
+
+auto check_type(std::string_view const id) -> int {
   if (is_enumeration_constant(id)) return ENUMERATION_CONSTANT;
   if (is_typedef_name(id)) return TYPEDEF_NAME;
   return IDENTIFIER;
 }
 
-void add_enumeration_constant(char const *const id) {
-  if (is_enumeration_constant(id)) return;
-
-  if (enum_consts_capacity == 0) {
-    enum_consts_capacity = 1;
-    enum_consts_count = 0;
-    enum_consts = malloc(sizeof(char *));
+auto add_enumeration_constant(std::string_view const id) -> void {
+  if (!is_enumeration_constant(id)) {
+    enum_consts.emplace_back(id);
   }
-
-  if (enum_consts_count == enum_consts_capacity) {
-    enum_consts_capacity *= 2;
-    enum_consts = realloc(enum_consts, enum_consts_capacity * sizeof(char *));
-    assert(enum_consts != NULL);
-  }
-
-  enum_consts[enum_consts_count] = strdup(id);
-  ++enum_consts_count;
 }
 
-bool is_enumeration_constant(char const *const id) {
-  for (size_t i = 0; i < enum_consts_count; ++i) {
-    if (strcmp(enum_consts[i], id) == 0) {
-      return true;
-    }
-  }
-  return false;
+auto is_enumeration_constant(std::string_view const id) -> bool {
+  return std::find(enum_consts.cbegin(), enum_consts.cend(), id) != enum_consts.cend();
 }
 
-void add_typedef_name(char const *const id) {
-  if (is_typedef_name(id)) return;
-
-  if (typedef_names_capacity == 0) {
-    typedef_names_capacity = 1;
-    typedef_names_count = 0;
-    typedef_names = malloc(sizeof(char *));
+auto add_typedef_name(std::string_view const id) -> void {
+  if (!is_typedef_name(id)) {
+    typedef_names.emplace_back(id);
   }
-
-  if (typedef_names_count == typedef_names_capacity) {
-    typedef_names_capacity *= 2;
-    typedef_names = realloc(typedef_names, typedef_names_capacity * sizeof(char *));
-    assert(typedef_names != NULL);
-  }
-
-  typedef_names[typedef_names_count] = strdup(id);
-  ++typedef_names_count;
 }
 
-bool is_typedef_name(char const *const id) {
-  for (size_t i = 0; i < typedef_names_count; ++i) {
-    if (strcmp(typedef_names[i], id) == 0) {
-      return true;
-    }
-  }
-  return false;
+auto is_typedef_name(std::string_view const id) -> bool {
+  return std::find(typedef_names.cbegin(), typedef_names.cend(), id) != typedef_names.cend();
 }
 
 /* vim: set ts=2 sw=2 et: */

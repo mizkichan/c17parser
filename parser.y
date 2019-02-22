@@ -1,15 +1,19 @@
 %code {
-#include "lexer.h"
-extern void add_enumeration_constant(char const *);
-extern void add_typedef_name(char const *);
+#include "lexer.hpp"
+#include <string_view>
+
+extern auto add_enumeration_constant(std::string_view) -> void;
+extern auto add_typedef_name(std::string_view) -> void;
 }
 
 %code requires {
-#include <stdint.h>
+#include <cstdint>
 }
 
 %code provides {
-void yyerror(char const *);
+#include <string_view>
+
+extern auto yyerror(std::string_view) -> void;
 }
 
 %define parse.error verbose
