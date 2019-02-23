@@ -6,13 +6,13 @@ LDLIBS += -lboost_program_options
 .SUFFIXES:
 
 .PHONY: all
-all: main
-main: main.o lexer.o parser.o
-main.o: main.cpp lexer.hpp parser.hpp
+all: c2xml
+c2xml: c2xml.o lexer.o parser.o
+c2xml.o: c2xml.cpp lexer.hpp parser.hpp
 
 .PHONY: clean
 clean:
-	$(RM) main *.o lexer.cpp parser.cpp lexer.hpp parser.hpp
+	$(RM) c2xml *.o lexer.cpp parser.cpp lexer.hpp parser.hpp
 
 %: %.o
 	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
