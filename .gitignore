@@ -1,6 +1,7 @@
-main
-lexer.c
-lexer.h
-parser.c
-parser.h
 *.o
+compile_commands.json
+lexer.cpp
+lexer.hpp
+main
+parser.cpp
+parser.hpp

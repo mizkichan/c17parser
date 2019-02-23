@@ -1,15 +1,13 @@
 %{
 #include "parser.hpp"
-#include <algorithm>
-#include <cassert>
-#include <string>
 #include <string_view>
-#include <vector>
 
 #define YY_USER_ACTION if (*yytext != '\n') { \
   yylloc.first_column = yylloc.last_column; \
   yylloc.last_column += yyleng; \
 }
+
+#define fprintf flex_fprintf
 
 static auto check_type(std::string_view id) -> int;
 extern auto add_enumeration_constant(std::string_view id) -> void;
@@ -18,6 +16,7 @@ static auto is_enumeration_constant(std::string_view id) -> bool;
 static auto is_typedef_name(std::string_view id) -> bool;
 
 extern auto yyerror(std::string_view) -> void;
+extern auto flex_fprintf(FILE *, char const *const, ...) -> int;
 %}
 
 %option debug
@@ -117,6 +116,12 @@ extern auto yyerror(std::string_view) -> void;
 }
 
 %%
+
+#undef fprintf
+
+#include <algorithm>
+#include <string>
+#include <vector>
 
 static std::vector<std::string> enum_consts;
 static std::vector<std::string> typedef_names;

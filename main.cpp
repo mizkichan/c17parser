@@ -1,46 +1,63 @@
 #include "lexer.hpp"
 #include "parser.hpp"
-#include <cstring>
-#include <cstdlib>
+#include <boost/program_options.hpp>
+#include <cassert>
 #include <iostream>
-#include <string_view>
 
-#include <unistd.h>
+#define DEBUG_BUFFER_SIZE 1024
 
 extern int yy_flex_debug;
 
 extern auto main(int argc, char **argv) -> int {
-  int opt;
-  FILE *fp;
+  using boost::program_options::command_line_parser;
+  using boost::program_options::options_description;
+  using boost::program_options::positional_options_description;
+  using boost::program_options::value;
+  using boost::program_options::variables_map;
 
-  yy_flex_debug = yydebug = 0;
+  auto visible = options_description();
+  // clang-format off
+  visible.add_options()
+    ("help,h", "Show help")
+    ("verbose,v", "Get verbose")
+    ("output,o", value<std::string>(), "Output file path");
+  // clang-format on
 
-  while ((opt = getopt(argc, argv, "o:v")) != -1) switch (opt) {
-    case 'o':
-      fp = std::fopen(optarg, "w");
-      if (!fp) {
-        std::cerr << optarg << ": " << std::strerror(errno) << std::endl;
-        return EXIT_FAILURE;
-      }
-      yyout = fp;
-      break;
+  // clang-format off
+  auto hidden = options_description();
+  hidden.add_options()
+    ("input", value<std::string>(), "Intput file path");
+  // clang-format on
 
-    case 'v':
-      yy_flex_debug = yydebug = 1;
-      break;
-
-    default:
-      std::cerr << "Usage: " << argv[0] << " [-v] [-o outfile] [infile]" << std::endl;
-      return EXIT_SUCCESS;
+  auto options = variables_map();
+  try {
+    boost::program_options::store(
+        command_line_parser(argc, argv)
+            .options(options_description().add(visible).add(hidden))
+            .positional(positional_options_description().add("input", 1))
+            .run(),
+        options);
+    boost::program_options::notify(options);
+  } catch (boost::program_options::error &e) {
+    std::cerr << e.what() << std::endl;
+    return EXIT_FAILURE;
   }
 
-  if (optind < argc) {
-    fp = std::fopen(argv[optind], "r");
-    if (!fp) {
-      std::cerr << argv[optind] << ": " << std::strerror(errno) << std::endl;
-      return EXIT_FAILURE;
-    }
-    yyin = fp;
+  if (options.count("help")) {
+    std::cout << "Usage: " << argv[0] << " [options] [file]" << std::endl
+              << "Options: " << std::endl
+              << visible;
+    return EXIT_SUCCESS;
+  }
+
+  yy_flex_debug = yydebug = options.count("verbose");
+
+  if (options.count("input")) {
+    yyin = std::fopen(options["input"].as<std::string>().c_str(), "r");
+  }
+
+  if (options.count("output")) {
+    yyout = std::fopen(options["output"].as<std::string>().c_str(), "w");
   }
 
   yyparse();
@@ -49,8 +66,57 @@ extern auto main(int argc, char **argv) -> int {
 
 extern auto yyerror(std::string_view msg) -> void {
   std::cerr << yylloc.first_line << ':' << yylloc.first_column << '-'
-            << yylloc.last_line  << ':' << yylloc.last_column  << ": "
-            << msg << std::endl;
+            << yylloc.last_line << ':' << yylloc.last_column << ": " << msg
+            << std::endl;
 }
 
-/* vim: set ts=2 sw=2 et: */
+static auto debug(std::string header, char const *const format, va_list ap)
+    -> void {
+  static auto streams = std::map<std::string, std::stringstream>();
+  static auto is_start_of_line = true;
+
+  auto &stream = streams.try_emplace(header).first->second;
+
+  // create formatted C-string and put it to the stream
+  char buffer[DEBUG_BUFFER_SIZE];
+  assert(std::vsnprintf(buffer, DEBUG_BUFFER_SIZE, format, ap) <
+         DEBUG_BUFFER_SIZE);
+  stream << buffer;
+
+  // print lines
+  auto line = std::string();
+  while (std::getline(stream, line)) {
+    if (stream.eof()) {
+      // when the last line has no '\n'
+      is_start_of_line = false;
+      stream.clear();
+      stream << line;
+      break;
+    }
+
+    std::cerr << "[" << header << "]\t" << line << std::endl;
+    is_start_of_line = true;
+  }
+
+  stream.clear();
+}
+
+extern auto bison_fprintf(__attribute__((unused)) FILE *stream,
+                          char const *const format, ...) -> int {
+  va_list ap;
+  va_start(ap, format);
+  debug("bison", format, ap);
+  va_end(ap);
+  return 0;
+}
+
+extern auto flex_fprintf(__attribute__((unused)) FILE *stream,
+                         char const *const format, ...) -> int {
+  va_list ap;
+  va_start(ap, format);
+  debug("flex ", format, ap);
+  va_end(ap);
+  return 0;
+}
+
+// vim: set ts=2 sw=2 et:

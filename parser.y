@@ -1,20 +1,24 @@
 %code {
-#include "lexer.hpp"
-#include <string_view>
+/* Unqualified "%code" block which will be emitted into .cpp */
+#include <cstdio>
+#define YYFPRINTF bison_fprintf
 
-extern auto add_enumeration_constant(std::string_view) -> void;
-extern auto add_typedef_name(std::string_view) -> void;
+extern auto bison_fprintf(FILE *, char const *const, ...) -> int;
 }
 
 %code requires {
+/* "%code requires" block for dependency codes of YYSTYPE and YYLTYPE */
 #include <cstdint>
-#include <iostream>
 }
 
 %code provides {
+/* "%code provides" block for declarations in other object files */
 #include <string_view>
 
+extern auto yylex(void) -> int;
 extern auto yyerror(std::string_view) -> void;
+extern auto add_enumeration_constant(std::string_view) -> void;
+extern auto add_typedef_name(std::string_view) -> void;
 }
 
 %define parse.error verbose
