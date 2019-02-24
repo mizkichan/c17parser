@@ -51,7 +51,7 @@ extern auto main(int argc, char **argv) -> int {
     return EXIT_SUCCESS;
   }
 
-  yy_flex_debug = yydebug = options.count("verbose");
+  // yy_flex_debug = yydebug = options.count("verbose");
 
   if (options.count("input")) {
     yyin = std::fopen(options["input"].as<std::string>().c_str(), "r");
@@ -61,15 +61,16 @@ extern auto main(int argc, char **argv) -> int {
     yyout = std::fopen(options["output"].as<std::string>().c_str(), "w");
   }
 
-  yyparse();
-  return EXIT_SUCCESS;
+  yy::parser yyparse;
+  return yyparse();
 }
 
-extern auto yyerror(std::string_view msg) -> void {
-  std::cerr << yylloc.first_line << ':' << yylloc.first_column << '-'
-            << yylloc.last_line << ':' << yylloc.last_column << ": " << msg
-            << std::endl;
+namespace yy {
+extern auto error(parser::location_type const &yylloc, std::string const &msg)
+    -> void {
+  std::cerr << yylloc << ": " << msg << std::endl;
 }
+} // namespace yy
 
 static auto debug(std::string header, char const *const format, va_list ap)
     -> void {
