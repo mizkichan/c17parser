@@ -1,42 +1,27 @@
 %code {
 /* Unqualified "%code" block which will be emitted into .cpp */
-#include <cstdio>
-#define YYFPRINTF bison_fprintf
-
-extern auto bison_fprintf(FILE *, char const *const, ...) -> int;
 }
 
 %code requires {
 /* "%code requires" block for dependency codes of YYSTYPE and YYLTYPE */
-#include <cstdint>
 }
 
 %code provides {
 /* "%code provides" block for declarations in other object files */
-#include <string_view>
-
-extern auto yylex(void) -> int;
-extern auto yyerror(std::string_view) -> void;
-extern auto add_enumeration_constant(std::string_view) -> void;
-extern auto add_typedef_name(std::string_view) -> void;
+auto yylex(yy::parser::semantic_type* YYLVAL, yy::parser::location_type* YYLLOC) -> int;
 }
 
+%define parse.assert
 %define parse.error verbose
-%define parse.lac full
 %define parse.trace
+%language "c++"
 %locations
-
-%union {
-  char *str;
-  uintmax_t num;
-}
+%require "3.2"
 
 %token AUTO BREAK CASE CHAR CONST CONTINUE DEFAULT DO DOUBLE ELSE ENUM EXTERN FLOAT FOR GOTO IF INLINE INT LONG REGISTER RESTRICT RETURN SHORT SIGNED SIZEOF STATIC STRUCT SWITCH TYPEDEF UNION UNSIGNED VOID VOLATILE WHILE ALIGNAS ALIGNOF ATOMIC BOOL COMPLEX GENERIC IMAGINARY NORETURN STATIC_ASSERT THREAD_LOCAL
 %token ELLIPSIS LEFT_ASSIGN RIGHT_ASSIGN NOT_EQUAL LESS_EQUAL EQUAL GREATER_EQUAL MOD_ASSIGN MUL_ASSIGN ADD_ASSIGN SUB_ASSIGN DIV_ASSIGN AND OR AND_ASSIGN XOR_ASSIGN OR_ASSIGN INCREMENT DECREMENT ARROW LEFT RIGHT
-%token <num> INTEGER_CONSTANT FLOATING_CONSTANT CHARACTER_CONSTANT
-%token <str> IDENTIFIER ENUMERATION_CONSTANT TYPEDEF_NAME STRING_LITERAL
-
-%printer { YYFPRINTF(yyo, "%s", $$); } IDENTIFIER;
+%token INTEGER_CONSTANT FLOATING_CONSTANT CHARACTER_CONSTANT
+%token IDENTIFIER ENUMERATION_CONSTANT TYPEDEF_NAME STRING_LITERAL
 
 %start translation_unit
 
@@ -48,7 +33,7 @@ constant: INTEGER_CONSTANT
         | CHARACTER_CONSTANT
         ;
 
-enumeration_constant: IDENTIFIER  { add_enumeration_constant($1); }
+enumeration_constant: IDENTIFIER  { /* add_enumeration_constant($1); */ }
                     ;
 
 primary_expression: IDENTIFIER
