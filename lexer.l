@@ -127,6 +127,7 @@ static std::vector<std::string> enum_consts;
 static std::vector<std::string> typedef_names;
 
 auto check_type(std::string_view const id) -> int {
+  if (id.find("__") == 0) return TYPEDEF_NAME;
   if (is_enumeration_constant(id)) return ENUMERATION_CONSTANT;
   if (is_typedef_name(id)) return TYPEDEF_NAME;
   return IDENTIFIER;

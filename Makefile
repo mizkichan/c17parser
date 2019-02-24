@@ -9,10 +9,11 @@ LDLIBS += -lboost_program_options
 all: c2xml
 c2xml: c2xml.o lexer.o parser.o
 c2xml.o: c2xml.cpp lexer.hpp parser.hpp
+lexer.o: lexer.cpp parser.hpp
 
 .PHONY: clean
 clean:
-	$(RM) c2xml *.o lexer.cpp parser.cpp lexer.hpp parser.hpp
+	$(RM) c2xml *.o lexer.cpp parser.cpp lexer.hpp parser.hpp *.output
 
 %: %.o
 	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
@@ -25,3 +26,7 @@ clean:
 
 %.cpp %.hpp: %.y
 	bison -d -o $(@:.hpp=.cpp) $<
+
+%.output: %.y
+	LANG=C bison -r all $<
+	$(RM) $(<:.y=.tab.c)

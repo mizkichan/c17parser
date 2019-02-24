@@ -2,6 +2,7 @@
 #include "parser.hpp"
 #include <boost/program_options.hpp>
 #include <cassert>
+#include <cstdarg>
 #include <iostream>
 
 #define DEBUG_BUFFER_SIZE 1024
@@ -73,7 +74,6 @@ extern auto yyerror(std::string_view msg) -> void {
 static auto debug(std::string header, char const *const format, va_list ap)
     -> void {
   static auto streams = std::map<std::string, std::stringstream>();
-  static auto is_start_of_line = true;
 
   auto &stream = streams.try_emplace(header).first->second;
 
@@ -88,14 +88,12 @@ static auto debug(std::string header, char const *const format, va_list ap)
   while (std::getline(stream, line)) {
     if (stream.eof()) {
       // when the last line has no '\n'
-      is_start_of_line = false;
       stream.clear();
       stream << line;
       break;
     }
 
     std::cerr << "[" << header << "]\t" << line << std::endl;
-    is_start_of_line = true;
   }
 
   stream.clear();

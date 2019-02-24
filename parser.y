@@ -36,6 +36,8 @@ extern auto add_typedef_name(std::string_view) -> void;
 %token <num> INTEGER_CONSTANT FLOATING_CONSTANT CHARACTER_CONSTANT
 %token <str> IDENTIFIER ENUMERATION_CONSTANT TYPEDEF_NAME STRING_LITERAL
 
+%printer { YYFPRINTF(yyo, "%s", $$); } IDENTIFIER;
+
 %start translation_unit
 
 %%
