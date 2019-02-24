@@ -86,7 +86,7 @@ argument_expression_list: assignment_expression
 unary_expression: postfix_expression
                 | INCREMENT unary_expression
                 | DECREMENT unary_expression
-                | unary_operator constant_expression
+                | unary_operator cast_expression
                 | SIZEOF unary_expression
                 | SIZEOF '(' type_name ')'
                 | ALIGNOF '(' type_name ')'
@@ -106,7 +106,8 @@ multiplicative_expression: cast_expression
 
 additive_expression: multiplicative_expression
                    | additive_expression '+' multiplicative_expression
-                   | additive_expression '-' multiplicative_expression ;
+                   | additive_expression '-' multiplicative_expression
+                   ;
 
 shift_expression: additive_expression
                 | shift_expression LEFT additive_expression
@@ -193,6 +194,9 @@ type_specifier: VOID | CHAR | SHORT | INT | LONG | FLOAT | DOUBLE | SIGNED | UNS
               | atomic_type_specifier
               | struct_or_union_specifier
               | enum_specifier
+              /*
+              | typedef_name
+              */
               | TYPEDEF_NAME
               ;
 
@@ -244,6 +248,10 @@ enumerator: enumeration_constant
           | enumeration_constant '=' enumeration_constant
           ;
 
+/* NOTE: following two rules make grammar ambiguous.
+ * See https://stackoverflow.com/questions/10668941/c11-grammar-ambiguity-between-atomic-type-specifier-and-qualifier
+ */
+
 atomic_type_specifier: ATOMIC '(' type_name ')'
                      ;
 
@@ -275,8 +283,10 @@ direct_declarator: IDENTIFIER
                  | direct_declarator '(' identifier_list ')'
                  ;
 
-typedef_name: IDENTIFIER  { add_typedef_name($1); }
+/*
+typedef_name: IDENTIFIER
             ;
+*/
 
 pointer: '*'
        | '*' type_qualifier_list
