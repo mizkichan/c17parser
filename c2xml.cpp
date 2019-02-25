@@ -66,8 +66,8 @@ extern auto main(int argc, char **argv) -> int {
 }
 
 namespace yy {
-extern auto error(parser::location_type const &yylloc, std::string const &msg)
-    -> void {
+extern auto parser::error(parser::location_type const &yylloc,
+                          std::string const &msg) -> void {
   std::cerr << yylloc << ": " << msg << std::endl;
 }
 } // namespace yy
