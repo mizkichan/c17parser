@@ -4,14 +4,16 @@
 
 #define YY_DECL auto yylex(void)->yy::parser::symbol_type
 
-#define YY_USER_ACTION if (*yytext != '\n') { \
-  yylloc.begin.column = yylloc.end.column; \
-  yylloc.end.column += yyleng; \
-}
+#define YY_USER_ACTION                                                         \
+  if (*yytext != '\n') {                                                       \
+    yylloc.begin.column = yylloc.end.column;                                   \
+    yylloc.end.column += yyleng;                                               \
+  }
 
 static yy::parser::location_type yylloc;
 
-static auto check_type(char const *, yy::parser::location_type const&) -> yy::parser::symbol_type;
+static auto check_type(char const *, yy::parser::location_type const &)
+    -> yy::parser::symbol_type;
 extern auto add_enumeration_constant(std::string_view) -> void;
 extern auto add_typedef_name(std::string_view) -> void;
 static auto is_enumeration_constant(std::string_view) -> bool;
@@ -143,10 +145,14 @@ static auto is_typedef_name(std::string_view) -> bool;
 static std::vector<std::string> enum_consts;
 static std::vector<std::string> typedef_names;
 
-auto check_type(char const *const id, yy::parser::location_type const& yylloc) -> yy::parser::symbol_type {
-  if (std::string_view(id).find("__") == 0) return yy::parser::make_TYPEDEF_NAME(id, yylloc);
-  if (is_enumeration_constant(id)) return yy::parser::make_ENUMERATION_CONSTANT(id, yylloc);
-  if (is_typedef_name(id)) return yy::parser::make_TYPEDEF_NAME(id, yylloc);
+auto check_type(char const *const id, yy::parser::location_type const &yylloc)
+    -> yy::parser::symbol_type {
+  if (std::string_view(id).find("__") == 0)
+    return yy::parser::make_TYPEDEF_NAME(id, yylloc);
+  if (is_enumeration_constant(id))
+    return yy::parser::make_ENUMERATION_CONSTANT(id, yylloc);
+  if (is_typedef_name(id))
+    return yy::parser::make_TYPEDEF_NAME(id, yylloc);
   return yy::parser::make_IDENTIFIER(id, yylloc);
 }
 
@@ -157,7 +163,8 @@ auto add_enumeration_constant(std::string_view const id) -> void {
 }
 
 auto is_enumeration_constant(std::string_view const id) -> bool {
-  return std::find(enum_consts.cbegin(), enum_consts.cend(), id) != enum_consts.cend();
+  return std::find(enum_consts.cbegin(), enum_consts.cend(), id) !=
+         enum_consts.cend();
 }
 
 auto add_typedef_name(std::string_view const id) -> void {
@@ -167,7 +174,8 @@ auto add_typedef_name(std::string_view const id) -> void {
 }
 
 auto is_typedef_name(std::string_view const id) -> bool {
-  return std::find(typedef_names.cbegin(), typedef_names.cend(), id) != typedef_names.cend();
+  return std::find(typedef_names.cbegin(), typedef_names.cend(), id) !=
+         typedef_names.cend();
 }
 
 /* vim: set ts=2 sw=2 et: */

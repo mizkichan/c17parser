@@ -443,7 +443,8 @@ declaration_list: declaration
 
 %%
 
-auto yy::parser::error(parser::location_type const &yylloc, std::string const &msg) -> void {
+auto yy::parser::error(parser::location_type const &yylloc,
+                       std::string const &msg) -> void {
   std::cerr << yylloc << ": " << msg << std::endl;
 }
 
