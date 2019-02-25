@@ -443,4 +443,8 @@ declaration_list: declaration
 
 %%
 
+auto yy::parser::error(parser::location_type const &yylloc, std::string const &msg) -> void {
+  std::cerr << yylloc << ": " << msg << std::endl;
+}
+
 /* vim: set ts=2 sw=2 et: */

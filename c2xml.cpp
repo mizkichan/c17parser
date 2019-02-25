@@ -65,11 +65,4 @@ extern auto main(int argc, char **argv) -> int {
   return yyparse();
 }
 
-namespace yy {
-extern auto parser::error(parser::location_type const &yylloc,
-                          std::string const &msg) -> void {
-  std::cerr << yylloc << ": " << msg << std::endl;
-}
-} // namespace yy
-
 // vim: set ts=2 sw=2 et:
