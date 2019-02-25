@@ -1,11 +1,12 @@
+// I do not know why this macro has suddenly been necessary here.
+#define YY_DECL auto yylex(void)->yy::parser::symbol_type
+
 #include "lexer.hpp"
 #include "parser.hpp"
 #include <boost/program_options.hpp>
 #include <cassert>
 #include <cstdarg>
 #include <iostream>
-
-#define DEBUG_BUFFER_SIZE 1024
 
 extern int yy_flex_debug;
 
@@ -51,8 +52,6 @@ extern auto main(int argc, char **argv) -> int {
     return EXIT_SUCCESS;
   }
 
-  // yy_flex_debug = yydebug = options.count("verbose");
-
   if (options.count("input")) {
     yyin = std::fopen(options["input"].as<std::string>().c_str(), "r");
   }
@@ -61,6 +60,7 @@ extern auto main(int argc, char **argv) -> int {
     yyout = std::fopen(options["output"].as<std::string>().c_str(), "w");
   }
 
+  yy_flex_debug = 0;
   yy::parser yyparse;
   return yyparse();
 }
@@ -71,51 +71,5 @@ extern auto parser::error(parser::location_type const &yylloc,
   std::cerr << yylloc << ": " << msg << std::endl;
 }
 } // namespace yy
-
-static auto debug(std::string header, char const *const format, va_list ap)
-    -> void {
-  static auto streams = std::map<std::string, std::stringstream>();
-
-  auto &stream = streams.try_emplace(header).first->second;
-
-  // create formatted C-string and put it to the stream
-  char buffer[DEBUG_BUFFER_SIZE];
-  assert(std::vsnprintf(buffer, DEBUG_BUFFER_SIZE, format, ap) <
-         DEBUG_BUFFER_SIZE);
-  stream << buffer;
-
-  // print lines
-  auto line = std::string();
-  while (std::getline(stream, line)) {
-    if (stream.eof()) {
-      // when the last line has no '\n'
-      stream.clear();
-      stream << line;
-      break;
-    }
-
-    std::cerr << "[" << header << "]\t" << line << std::endl;
-  }
-
-  stream.clear();
-}
-
-extern auto bison_fprintf(__attribute__((unused)) FILE *stream,
-                          char const *const format, ...) -> int {
-  va_list ap;
-  va_start(ap, format);
-  debug("bison", format, ap);
-  va_end(ap);
-  return 0;
-}
-
-extern auto flex_fprintf(__attribute__((unused)) FILE *stream,
-                         char const *const format, ...) -> int {
-  va_list ap;
-  va_start(ap, format);
-  debug("flex ", format, ap);
-  va_end(ap);
-  return 0;
-}
 
 // vim: set ts=2 sw=2 et:
