@@ -1,8 +1,6 @@
 *.o
 c2xml
 compile_commands.json
-lexer.cpp
-lexer.hpp
 location.hpp
 parser.cpp
 parser.hpp

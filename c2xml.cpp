@@ -1,14 +1,12 @@
-// I do not know why this macro has suddenly been necessary here.
-#define YY_DECL auto yylex(void)->yy::parser::symbol_type
-
-#include "lexer.hpp"
 #include "parser.hpp"
 #include <boost/program_options.hpp>
 #include <cassert>
 #include <cstdarg>
+#include <fstream>
 #include <iostream>
 
-extern int yy_flex_debug;
+extern std::istream *yyin;
+extern std::string *yyfile;
 
 extern auto main(int argc, char **argv) -> int {
   using boost::program_options::command_line_parser;
@@ -52,15 +50,19 @@ extern auto main(int argc, char **argv) -> int {
     return EXIT_SUCCESS;
   }
 
+  // FIXME dirty
+  std::ifstream in;
+  std::string file;
   if (options.count("input")) {
-    yyin = std::fopen(options["input"].as<std::string>().c_str(), "r");
+    file = options["input"].as<std::string>();
+    in = std::ifstream(file.c_str());
+    yyin = &in;
+    yyfile = &file;
   }
 
   if (options.count("output")) {
-    yyout = std::fopen(options["output"].as<std::string>().c_str(), "w");
   }
 
-  yy_flex_debug = 0;
   yy::parser yyparse;
   return yyparse();
 }
