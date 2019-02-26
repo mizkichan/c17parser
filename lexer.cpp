@@ -7,7 +7,9 @@ static auto is_enumeration_constant(std::string_view) -> bool;
 static auto is_typedef_name(std::string_view) -> bool;
 
 static std::vector<std::string> enum_consts;
-static std::vector<std::string> typedef_names;
+static std::vector<std::string> typedef_names = {
+    "__builtin_va_list",
+};
 
 std::istream *yyin = &std::cin;
 std::optional<std::string> yyfile;
@@ -165,8 +167,6 @@ auto yylex(void) -> yy::parser::symbol_type {
 
 auto check_type(std::string const &id, yy::parser::location_type const &yylloc)
     -> yy::parser::symbol_type {
-  if (std::string_view(id).find("__") == 0)
-    return yy::parser::make_TYPEDEF_NAME(id, yylloc);
   if (is_enumeration_constant(id))
     return yy::parser::make_ENUMERATION_CONSTANT(id, yylloc);
   if (is_typedef_name(id))

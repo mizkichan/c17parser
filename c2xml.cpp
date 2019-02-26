@@ -45,7 +45,6 @@ extern auto main(int argc, char **argv) -> int {
     return EXIT_SUCCESS;
   }
 
-  // FIXME dirty
   if (options.count("input")) {
     yyfile = options["input"].as<std::string>();
     yyin = new std::ifstream(yyfile->c_str());
@@ -55,6 +54,7 @@ extern auto main(int argc, char **argv) -> int {
   }
 
   yy::parser yyparse;
+  yyparse.set_debug_level(options.count("verbose"));
   return yyparse();
 }
 

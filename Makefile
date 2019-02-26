@@ -28,8 +28,8 @@ clean:
 format: c2xml.cpp lexer.cpp
 	clang-format -i $^
 
-parser.output: parser.y
+%.output: %.ypp
 	LANG=C bison -r all $<
-	$(RM) $(<:.y=.tab.c)
+	$(RM) $(<:.ypp=.tab.c)
 
 -include c2xml.d lexer.d parser.d

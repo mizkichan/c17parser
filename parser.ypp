@@ -27,6 +27,10 @@
 %token <std::string> IDENTIFIER ENUMERATION_CONSTANT TYPEDEF_NAME STRING_LITERAL
 %token END_OF_FILE 0
 
+%printer { yyo << $$; }
+  INTEGER_CONSTANT FLOATING_CONSTANT CHARACTER_CONSTANT
+  IDENTIFIER ENUMERATION_CONSTANT TYPEDEF_NAME STRING_LITERAL
+
 %start translation_unit
 
 %%
@@ -154,8 +158,8 @@ expression: assignment_expression
 constant_expression: conditional_expression
                    ;
 
-declaration: declaration_specifiers SEMI 
-           | declaration_specifiers init_declarator_list SEMI 
+declaration: declaration_specifiers SEMI
+           | declaration_specifiers init_declarator_list SEMI
            | static_assert_declaration
            ;
 
@@ -164,7 +168,7 @@ declaration_specifiers: storage_class_specifier
                       | type_specifier
                       | type_specifier declaration_specifiers
                       | type_qualifier
-                      | type_qualifier declaration_specifiers 
+                      | type_qualifier declaration_specifiers
                       | function_specifier
                       | function_specifier declaration_specifiers
                       | alignment_specifier
@@ -426,7 +430,7 @@ translation_unit: external_declaration
                 ;
 
 external_declaration: function_definition
-                    | declaration 
+                    | declaration
                     ;
 
 function_definition: declaration_specifiers declarator compound_statement
@@ -434,7 +438,7 @@ function_definition: declaration_specifiers declarator compound_statement
                    ;
 
 declaration_list: declaration
-                | declaration_list declaration 
+                | declaration_list declaration
                 ;
 
 %%
