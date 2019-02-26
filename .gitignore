@@ -1,6 +1,7 @@
 *.d
 *.o
+*.output
+*.tab.*
 c2xml
 compile_commands.json
 location.hpp
-parser.tab.*
