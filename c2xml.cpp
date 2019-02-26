@@ -1,5 +1,5 @@
 #include "lexer.hpp"
-#include "parser.hpp"
+#include "parser.tab.hpp"
 #include <boost/program_options.hpp>
 #include <fstream>
 

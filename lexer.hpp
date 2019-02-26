@@ -1,7 +1,7 @@
 #ifndef LEXER_HPP
 #define LEXER_HPP
 
-#include "parser.hpp"
+#include "parser.tab.hpp"
 #include <optional>
 
 extern auto yylex(void) -> yy::parser::symbol_type;

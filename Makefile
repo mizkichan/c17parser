@@ -1,27 +1,15 @@
-CXXFLAGS += -std=c++17 -Wall -Wextra
+CXXFLAGS += -std=c++17 -Wall -Wextra -MMD -MP
 CPPFLAGS +=
 LDFLAGS +=
 LDLIBS += -lboost_program_options
 
 .SUFFIXES:
 
-.PHONY: all
-all: c2xml
-c2xml: c2xml.o lexer.o parser.o
-c2xml.o: c2xml.cpp parser.hpp
-lexer.o: lexer.cpp parser.hpp
-parser.o: parser.cpp lexer.hpp
-
-parser.cpp parser.hpp location.hpp: parser.y
-	bison -d -D api.location.file='"location.hpp"' -o parser.cpp $<
-
-.PHONY: clean
-clean:
-	$(RM) c2xml *.o parser.cpp parser.hpp location.hpp *.output
-
-.PHONY: format
-format: c2xml.cpp lexer.cpp
-	clang-format -i $^
+.DEFAULT: c2xml
+c2xml: c2xml.o lexer.o parser.tab.o
+c2xml.o: c2xml.cpp parser.tab.hpp
+lexer.o: lexer.cpp parser.tab.hpp
+parser.tab.o: parser.tab.cpp
 
 %: %.o
 	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
@@ -29,6 +17,19 @@ format: c2xml.cpp lexer.cpp
 %.o: %.cpp
 	$(CXX) $< $(CXXFLAGS) $(CPPFLAGS) -c -o $@
 
-%.output: %.y
+%.tab.cpp %.tab.hpp: %.ypp
+	bison -d -D api.location.file='"location.hpp"' $<
+
+.PHONY: clean
+clean:
+	$(RM) `cat .gitignore`
+
+.PHONY: format
+format: c2xml.cpp lexer.cpp
+	clang-format -i $^
+
+parser.output: parser.y
 	LANG=C bison -r all $<
 	$(RM) $(<:.y=.tab.c)
+
+-include c2xml.d lexer.d parser.d
