@@ -1,12 +1,7 @@
+#include "lexer.hpp"
 #include "parser.hpp"
 #include <boost/program_options.hpp>
-#include <cassert>
-#include <cstdarg>
 #include <fstream>
-#include <iostream>
-
-extern std::istream *yyin;
-extern std::optional<std::string> yyfile;
 
 extern auto main(int argc, char **argv) -> int {
   using boost::program_options::command_line_parser;

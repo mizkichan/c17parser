@@ -4,16 +4,11 @@
 
 %code requires {
 /* "%code requires" block for dependency codes of YYSTYPE and YYLTYPE */
-#include <string>
 }
 
 %code provides {
 /* "%code provides" block for declarations in other object files */
-#include <string_view>
-
-extern auto yylex(void) -> yy::parser::symbol_type;
-extern auto add_enumeration_constant(std::string_view) -> void;
-extern auto add_typedef_name(std::string_view) -> void;
+#include "lexer.hpp"
 }
 
 %define api.token.constructor

@@ -1,20 +1,11 @@
-#include "parser.hpp"
-#include <algorithm>
+#include "lexer.hpp"
 #include <regex>
-#include <string>
-#include <string_view>
-#include <vector>
 
-extern auto yylex(void) -> yy::parser::symbol_type;
 static auto check_type(std::string const &, yy::parser::location_type const &)
     -> yy::parser::symbol_type;
-extern auto add_enumeration_constant(std::string_view) -> void;
-extern auto add_typedef_name(std::string_view) -> void;
 static auto is_enumeration_constant(std::string_view) -> bool;
 static auto is_typedef_name(std::string_view) -> bool;
 
-extern std::istream *yyin;
-extern std::optional<std::string> yyfile;
 static std::vector<std::string> enum_consts;
 static std::vector<std::string> typedef_names;
 

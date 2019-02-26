@@ -10,7 +10,7 @@ all: c2xml
 c2xml: c2xml.o lexer.o parser.o
 c2xml.o: c2xml.cpp parser.hpp
 lexer.o: lexer.cpp parser.hpp
-parser.o: parser.cpp
+parser.o: parser.cpp lexer.hpp
 
 parser.cpp parser.hpp location.hpp: parser.y
 	bison -d -D api.location.file='"location.hpp"' -o parser.cpp $<
