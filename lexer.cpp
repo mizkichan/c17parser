@@ -28,17 +28,12 @@ auto advance(std::string_view &line, std::string::size_type yyleng,
   yylloc.end.column += yyleng;
 }
 
-#define STRING(S, ACTION)                                                      \
+#define STRING(S, T)                                                           \
   if (line.find((S)) == 0) {                                                   \
     advance(line, std::size((S)) - 1, yylloc);                                 \
-    ACTION                                                                     \
-  }
-
-#define TOKEN(S, T)                                                            \
-  STRING(S, {                                                                  \
     auto copied = yylloc; /* sucks */                                          \
     return yy::parser::symbol_type(yy::parser::token::T, std::move(copied));   \
-  })
+  }
 
 #define REGEX(S, ACTION)                                                       \
   {                                                                            \
@@ -73,97 +68,97 @@ auto yylex(void) -> yy::parser::symbol_type {
       yylloc.begin.column = yylloc.end.column = 1;
     }
 
-    TOKEN("_Static_assert", STATIC_ASSERT);
-    TOKEN("_Thread_local", THREAD_LOCAL);
-    TOKEN("_Imaginary", IMAGINARY);
-    TOKEN("_Noreturn", NORETURN);
-    TOKEN("_Alignas", ALIGNAS);
-    TOKEN("_Alignof", ALIGNOF);
-    TOKEN("_Complex", COMPLEX);
-    TOKEN("_Generic", GENERIC);
-    TOKEN("continue", CONTINUE);
-    TOKEN("register", REGISTER);
-    TOKEN("restrict", RESTRICT);
-    TOKEN("unsigned", UNSIGNED);
-    TOKEN("volatile", VOLATILE);
-    TOKEN("default", DEFAULT);
-    TOKEN("typedef", TYPEDEF);
-    TOKEN("_Atomic", ATOMIC);
-    TOKEN("double", DOUBLE);
-    TOKEN("extern", EXTERN);
-    TOKEN("inline", INLINE);
-    TOKEN("return", RETURN);
-    TOKEN("signed", SIGNED);
-    TOKEN("sizeof", SIZEOF);
-    TOKEN("static", STATIC);
-    TOKEN("struct", STRUCT);
-    TOKEN("switch", SWITCH);
-    TOKEN("_Bool", BOOL);
-    TOKEN("break", BREAK);
-    TOKEN("const", CONST);
-    TOKEN("float", FLOAT);
-    TOKEN("short", SHORT);
-    TOKEN("union", UNION);
-    TOKEN("while", WHILE);
-    TOKEN("auto", AUTO);
-    TOKEN("case", CASE);
-    TOKEN("char", CHAR);
-    TOKEN("else", ELSE);
-    TOKEN("enum", ENUM);
-    TOKEN("goto", GOTO);
-    TOKEN("long", LONG);
-    TOKEN("void", VOID);
-    TOKEN("for", FOR);
-    TOKEN("int", INT);
-    TOKEN("do", DO);
-    TOKEN("if", IF);
+    STRING("_Static_assert", STATIC_ASSERT);
+    STRING("_Thread_local", THREAD_LOCAL);
+    STRING("_Imaginary", IMAGINARY);
+    STRING("_Noreturn", NORETURN);
+    STRING("_Alignas", ALIGNAS);
+    STRING("_Alignof", ALIGNOF);
+    STRING("_Complex", COMPLEX);
+    STRING("_Generic", GENERIC);
+    STRING("continue", CONTINUE);
+    STRING("register", REGISTER);
+    STRING("restrict", RESTRICT);
+    STRING("unsigned", UNSIGNED);
+    STRING("volatile", VOLATILE);
+    STRING("default", DEFAULT);
+    STRING("typedef", TYPEDEF);
+    STRING("_Atomic", ATOMIC);
+    STRING("double", DOUBLE);
+    STRING("extern", EXTERN);
+    STRING("inline", INLINE);
+    STRING("return", RETURN);
+    STRING("signed", SIGNED);
+    STRING("sizeof", SIZEOF);
+    STRING("static", STATIC);
+    STRING("struct", STRUCT);
+    STRING("switch", SWITCH);
+    STRING("_Bool", BOOL);
+    STRING("break", BREAK);
+    STRING("const", CONST);
+    STRING("float", FLOAT);
+    STRING("short", SHORT);
+    STRING("union", UNION);
+    STRING("while", WHILE);
+    STRING("auto", AUTO);
+    STRING("case", CASE);
+    STRING("char", CHAR);
+    STRING("else", ELSE);
+    STRING("enum", ENUM);
+    STRING("goto", GOTO);
+    STRING("long", LONG);
+    STRING("void", VOID);
+    STRING("for", FOR);
+    STRING("int", INT);
+    STRING("do", DO);
+    STRING("if", IF);
 
-    TOKEN("...", ELLIPSIS);
-    TOKEN("<<=", LEFT_ASSIGN);
-    TOKEN(">>=", RIGHT_ASSIGN);
-    TOKEN("!=", NOT_EQUAL);
-    TOKEN("<=", LESS_EQUAL);
-    TOKEN("==", EQUAL);
-    TOKEN(">=", GREATER_EQUAL);
-    TOKEN("%=", MOD_ASSIGN);
-    TOKEN("*=", MUL_ASSIGN);
-    TOKEN("+=", ADD_ASSIGN);
-    TOKEN("-=", SUB_ASSIGN);
-    TOKEN("/=", DIV_ASSIGN);
-    TOKEN("&&", AND);
-    TOKEN("||", OR);
-    TOKEN("&=", AND_ASSIGN);
-    TOKEN("^=", XOR_ASSIGN);
-    TOKEN("|=", OR_ASSIGN);
-    TOKEN("++", INCREMENT);
-    TOKEN("--", DECREMENT);
-    TOKEN("->", ARROW);
-    TOKEN("<<", LEFT);
-    TOKEN(">>", RIGHT);
-    TOKEN("!", EXCLAMATION);
-    TOKEN("%", PERCENT);
-    TOKEN("&", AMPASAND);
-    TOKEN("(", LEFT_PAREN);
-    TOKEN(")", RIGHT_PAREN);
-    TOKEN("*", ASTERISK);
-    TOKEN("+", PLUS);
-    TOKEN(",", COMMA);
-    TOKEN("-", MINUS);
-    TOKEN(".", DOT);
-    TOKEN("/", SLASH);
-    TOKEN(":", COLON);
-    TOKEN(";", SEMICOLON);
-    TOKEN("<", LESS_THAN);
-    TOKEN("=", ASSIGN);
-    TOKEN(">", GREATER_THAN);
-    TOKEN("?", QUESTION);
-    TOKEN("[", LEFT_BRACKET);
-    TOKEN("]", RIGHT_BRACKET);
-    TOKEN("^", CIRCUMFLEX);
-    TOKEN("{", LEFT_BRACE);
-    TOKEN("|", BAR);
-    TOKEN("}", RIGHT_BRACE);
-    TOKEN("~", TILDE);
+    STRING("...", ELLIPSIS);
+    STRING("<<=", LEFT_ASSIGN);
+    STRING(">>=", RIGHT_ASSIGN);
+    STRING("!=", NOT_EQUAL);
+    STRING("<=", LESS_EQUAL);
+    STRING("==", EQUAL);
+    STRING(">=", GREATER_EQUAL);
+    STRING("%=", MOD_ASSIGN);
+    STRING("*=", MUL_ASSIGN);
+    STRING("+=", ADD_ASSIGN);
+    STRING("-=", SUB_ASSIGN);
+    STRING("/=", DIV_ASSIGN);
+    STRING("&&", AND);
+    STRING("||", OR);
+    STRING("&=", AND_ASSIGN);
+    STRING("^=", XOR_ASSIGN);
+    STRING("|=", OR_ASSIGN);
+    STRING("++", INCREMENT);
+    STRING("--", DECREMENT);
+    STRING("->", ARROW);
+    STRING("<<", LEFT);
+    STRING(">>", RIGHT);
+    STRING("!", EXCLAMATION);
+    STRING("%", PERCENT);
+    STRING("&", AMPASAND);
+    STRING("(", LEFT_PAREN);
+    STRING(")", RIGHT_PAREN);
+    STRING("*", ASTERISK);
+    STRING("+", PLUS);
+    STRING(",", COMMA);
+    STRING("-", MINUS);
+    STRING(".", DOT);
+    STRING("/", SLASH);
+    STRING(":", COLON);
+    STRING(";", SEMICOLON);
+    STRING("<", LESS_THAN);
+    STRING("=", ASSIGN);
+    STRING(">", GREATER_THAN);
+    STRING("?", QUESTION);
+    STRING("[", LEFT_BRACKET);
+    STRING("]", RIGHT_BRACKET);
+    STRING("^", CIRCUMFLEX);
+    STRING("{", LEFT_BRACE);
+    STRING("|", BAR);
+    STRING("}", RIGHT_BRACE);
+    STRING("~", TILDE);
 
     REGEX("[_[:alpha:]][_[:alnum:]]*", { return check_type(yytext, yylloc); });
     REGEX(R"([ \t\v\f]+)", { continue; });
