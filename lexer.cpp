@@ -160,6 +160,8 @@ auto yylex(void) -> yy::parser::symbol_type {
           { return yy::parser::make_INTEGER_CONSTANT(yytext, yylloc); });
     REGEX("(?:0x|0X)[:alnum:]+",
           { return yy::parser::make_INTEGER_CONSTANT(yytext, yylloc); });
+    REGEX(R"("[^"]*")",
+          { return yy::parser::make_STRING_LITERAL(yytext, yylloc); });
 
     REGEX(R"([ \t\v\f]+)", { continue; });
 
