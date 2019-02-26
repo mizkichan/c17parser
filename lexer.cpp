@@ -154,6 +154,13 @@ auto yylex(void) -> yy::parser::symbol_type {
     STRING("~", TILDE);
 
     REGEX("[_[:alpha:]][_[:alnum:]]*", { return check_type(yytext, yylloc); });
+    REGEX("[1-9][0-9]*",
+          { return yy::parser::make_INTEGER_CONSTANT(yytext, yylloc); });
+    REGEX("0[0-7]*",
+          { return yy::parser::make_INTEGER_CONSTANT(yytext, yylloc); });
+    REGEX("(?:0x|0X)[:alnum:]+",
+          { return yy::parser::make_INTEGER_CONSTANT(yytext, yylloc); });
+
     REGEX(R"([ \t\v\f]+)", { continue; });
 
     REGEX(".", {
