@@ -165,7 +165,7 @@ auto yylex(void) -> yy::parser::symbol_type {
 
     REGEX(".", {
       std::cerr << yylloc << ": '" << yytext << "'" << std::endl;
-      break;
+      std::exit(EXIT_FAILURE);
     });
   }
 
