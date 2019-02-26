@@ -21,7 +21,8 @@
 %require "3.2"
 
 %token AUTO BREAK CASE CHAR CONST CONTINUE DEFAULT DO DOUBLE ELSE ENUM EXTERN FLOAT FOR GOTO IF INLINE INT LONG REGISTER RESTRICT RETURN SHORT SIGNED SIZEOF STATIC STRUCT SWITCH TYPEDEF UNION UNSIGNED VOID VOLATILE WHILE ALIGNAS ALIGNOF ATOMIC BOOL COMPLEX GENERIC IMAGINARY NORETURN STATIC_ASSERT THREAD_LOCAL
-%token ELLIPSIS LEFT_ASSIGN RIGHT_ASSIGN NOT_EQUAL LESS_EQUAL EQUAL GREATER_EQUAL MOD_ASSIGN MUL_ASSIGN ADD_ASSIGN SUB_ASSIGN DIV_ASSIGN AND OR AND_ASSIGN XOR_ASSIGN OR_ASSIGN INCREMENT DECREMENT ARROW LEFT RIGHT EXCLAMATION PERCENT AMPASAND LEFT_PAREN RIGHT_PAREN ASTERISK PLUS COMMA MINUS DOT SLASH COLON SEMICOLON LESS_THAN ASSIGN GREATER_THAN QUESTION LEFT_BRACKET RIGHT_BRACKET CIRCUMFLEX LEFT_BRACE BAR RIGHT_BRACE TILDE
+%token HELLIP LAQUO_EQ RAQUO_EQ EXCL_EQ LT_EQ EQ_EQ GT_EQ PERCNT_EQ AST_EQ PLUS_EQ MINUS_EQ SOL_EQ AMP_AMP VERT_VERT AMP_EQ HAT_EQ VERT_EQ PLUS_PLUS MINUS_MINUS RARR LAQUO RAQUO
+%token EXCL PERCNT AMP LPAR RPAR AST PLUS COMMA MINUS PERIOD SOL COLON SEMI LT EQ GT QUEST LSQB RSQB HAT LCUB VERT RCUB TILDE
 %token <std::string> INTEGER_CONSTANT FLOATING_CONSTANT CHARACTER_CONSTANT
 %token <std::string> IDENTIFIER ENUMERATION_CONSTANT TYPEDEF_NAME STRING_LITERAL
 %token END_OF_FILE 0
@@ -42,11 +43,11 @@ enumeration_constant: IDENTIFIER  { add_enumeration_constant($1); }
 primary_expression: IDENTIFIER
                   | constant
                   | STRING_LITERAL
-                  | LEFT_PAREN expression RIGHT_PAREN
+                  | LPAR expression RPAR
                   | generic_selection
                   ;
 
-generic_selection: GENERIC LEFT_PAREN assignment_expression COMMA generic_assoc_list RIGHT_PAREN
+generic_selection: GENERIC LPAR assignment_expression COMMA generic_assoc_list RPAR
                  ;
 
 generic_assoc_list: generic_association
@@ -58,15 +59,15 @@ generic_association: type_name COLON assignment_expression
                    ;
 
 postfix_expression: primary_expression
-                  | postfix_expression LEFT_BRACKET expression RIGHT_BRACKET
-                  | postfix_expression LEFT_PAREN RIGHT_PAREN
-                  | postfix_expression LEFT_PAREN argument_expression_list RIGHT_PAREN
-                  | postfix_expression DOT IDENTIFIER
-                  | postfix_expression ARROW IDENTIFIER
-                  | postfix_expression INCREMENT
-                  | postfix_expression DECREMENT
-                  | LEFT_PAREN type_name RIGHT_PAREN LEFT_BRACE initializer_list RIGHT_BRACE
-                  | LEFT_PAREN type_name RIGHT_PAREN LEFT_BRACE initializer_list COMMA RIGHT_BRACE
+                  | postfix_expression LSQB expression RSQB
+                  | postfix_expression LPAR RPAR
+                  | postfix_expression LPAR argument_expression_list RPAR
+                  | postfix_expression PERIOD IDENTIFIER
+                  | postfix_expression RARR IDENTIFIER
+                  | postfix_expression PLUS_PLUS
+                  | postfix_expression MINUS_MINUS
+                  | LPAR type_name RPAR LCUB initializer_list RCUB
+                  | LPAR type_name RPAR LCUB initializer_list COMMA RCUB
                   ;
 
 argument_expression_list: assignment_expression
@@ -74,24 +75,24 @@ argument_expression_list: assignment_expression
                         ;
 
 unary_expression: postfix_expression
-                | INCREMENT unary_expression
-                | DECREMENT unary_expression
+                | PLUS_PLUS unary_expression
+                | MINUS_MINUS unary_expression
                 | unary_operator cast_expression
                 | SIZEOF unary_expression
-                | SIZEOF LEFT_PAREN type_name RIGHT_PAREN
-                | ALIGNOF LEFT_PAREN type_name RIGHT_PAREN
+                | SIZEOF LPAR type_name RPAR
+                | ALIGNOF LPAR type_name RPAR
                 ;
 
-unary_operator: AMPASAND | ASTERISK | PLUS | MINUS | TILDE | EXCLAMATION ;
+unary_operator: AMP | AST | PLUS | MINUS | TILDE | EXCL ;
 
 cast_expression: unary_expression
-               | LEFT_PAREN type_name RIGHT_PAREN cast_expression
+               | LPAR type_name RPAR cast_expression
                ;
 
 multiplicative_expression: cast_expression
-                         | multiplicative_expression ASTERISK cast_expression
-                         | multiplicative_expression SLASH cast_expression
-                         | multiplicative_expression PERCENT cast_expression
+                         | multiplicative_expression AST cast_expression
+                         | multiplicative_expression SOL cast_expression
+                         | multiplicative_expression PERCNT cast_expression
                          ;
 
 additive_expression: multiplicative_expression
@@ -100,51 +101,51 @@ additive_expression: multiplicative_expression
                    ;
 
 shift_expression: additive_expression
-                | shift_expression LEFT additive_expression
-                | shift_expression RIGHT additive_expression
+                | shift_expression LAQUO additive_expression
+                | shift_expression RAQUO additive_expression
                 ;
 
 relational_expression: shift_expression
-                     | relational_expression LESS_THAN shift_expression
-                     | relational_expression GREATER_THAN shift_expression
-                     | relational_expression LESS_EQUAL shift_expression
-                     | relational_expression GREATER_EQUAL shift_expression
+                     | relational_expression LT shift_expression
+                     | relational_expression GT shift_expression
+                     | relational_expression LT_EQ shift_expression
+                     | relational_expression GT_EQ shift_expression
                      ;
 
 equality_expression: relational_expression
-                   | equality_expression EQUAL relational_expression
-                   | equality_expression NOT_EQUAL relational_expression
+                   | equality_expression EQ_EQ relational_expression
+                   | equality_expression EXCL_EQ relational_expression
                    ;
 
 AND_expression: equality_expression
-              | AND_expression AMPASAND equality_expression
+              | AND_expression AMP equality_expression
               ;
 
 exclusive_OR_expression: AND_expression
-                       | exclusive_OR_expression CIRCUMFLEX AND_expression
+                       | exclusive_OR_expression HAT AND_expression
                        ;
 
 inclusive_OR_expression: exclusive_OR_expression
-                       | inclusive_OR_expression BAR exclusive_OR_expression
+                       | inclusive_OR_expression VERT exclusive_OR_expression
                        ;
 
 logical_AND_expression: inclusive_OR_expression
-                      | logical_AND_expression AND inclusive_OR_expression
+                      | logical_AND_expression AMP_AMP inclusive_OR_expression
                       ;
 
 logical_OR_expression: logical_AND_expression
-                     | logical_OR_expression OR logical_AND_expression
+                     | logical_OR_expression VERT_VERT logical_AND_expression
                      ;
 
 conditional_expression: logical_OR_expression
-                      | logical_OR_expression QUESTION expression COLON conditional_expression
+                      | logical_OR_expression QUEST expression COLON conditional_expression
                       ;
 
 assignment_expression: conditional_expression
                      | unary_expression assignment_operator assignment_expression
                      ;
 
-assignment_operator: ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN | ADD_ASSIGN | SUB_ASSIGN | LEFT_ASSIGN | RIGHT_ASSIGN | AND_ASSIGN | XOR_ASSIGN | OR_ASSIGN ;
+assignment_operator: EQ | AST_EQ | SOL_EQ | PERCNT_EQ | PLUS_EQ | MINUS_EQ | LAQUO_EQ | RAQUO_EQ | AMP_EQ | HAT_EQ | VERT_EQ ;
 
 expression: assignment_expression
           | expression COMMA assignment_expression
@@ -153,8 +154,8 @@ expression: assignment_expression
 constant_expression: conditional_expression
                    ;
 
-declaration: declaration_specifiers SEMICOLON 
-           | declaration_specifiers init_declarator_list SEMICOLON 
+declaration: declaration_specifiers SEMI 
+           | declaration_specifiers init_declarator_list SEMI 
            | static_assert_declaration
            ;
 
@@ -175,7 +176,7 @@ init_declarator_list: init_declarator
                     ;
 
 init_declarator: declarator
-               | declarator ASSIGN initializer
+               | declarator EQ initializer
                ;
 
 storage_class_specifier: TYPEDEF | EXTERN | STATIC | THREAD_LOCAL | AUTO | REGISTER ;
@@ -190,8 +191,8 @@ type_specifier: VOID | CHAR | SHORT | INT | LONG | FLOAT | DOUBLE | SIGNED | UNS
               | TYPEDEF_NAME
               ;
 
-struct_or_union_specifier: struct_or_union LEFT_BRACE struct_declaration_list RIGHT_BRACE
-                         | struct_or_union IDENTIFIER LEFT_BRACE struct_declaration_list RIGHT_BRACE
+struct_or_union_specifier: struct_or_union LCUB struct_declaration_list RCUB
+                         | struct_or_union IDENTIFIER LCUB struct_declaration_list RCUB
                          | struct_or_union IDENTIFIER
                          ;
 
@@ -201,8 +202,8 @@ struct_declaration_list: struct_declaration
                        | struct_declaration_list struct_declaration
                        ;
 
-struct_declaration: specifier_qualifier_list SEMICOLON
-                  | specifier_qualifier_list struct_declarator_list SEMICOLON
+struct_declaration: specifier_qualifier_list SEMI
+                  | specifier_qualifier_list struct_declarator_list SEMI
                   | static_assert_declaration
                   ;
 
@@ -223,10 +224,10 @@ struct_declarator: declarator
                  | declarator COLON constant_expression
                  ;
 
-enum_specifier: ENUM LEFT_BRACE enumerator_list RIGHT_BRACE
-              | ENUM IDENTIFIER LEFT_BRACE enumerator_list RIGHT_BRACE
-              | ENUM LEFT_BRACE enumerator_list COMMA RIGHT_BRACE
-              | ENUM IDENTIFIER LEFT_BRACE enumerator_list COMMA RIGHT_BRACE
+enum_specifier: ENUM LCUB enumerator_list RCUB
+              | ENUM IDENTIFIER LCUB enumerator_list RCUB
+              | ENUM LCUB enumerator_list COMMA RCUB
+              | ENUM IDENTIFIER LCUB enumerator_list COMMA RCUB
               | ENUM IDENTIFIER
               ;
 
@@ -235,22 +236,22 @@ enumerator_list: enumerator
                ;
 
 enumerator: enumeration_constant
-          | enumeration_constant ASSIGN enumeration_constant
+          | enumeration_constant EQ enumeration_constant
           ;
 
 /* NOTE: following two rules make grammar ambiguous.
  * See https://stackoverflow.com/questions/10668941/c11-grammar-ambiguity-between-atomic-type-specifier-and-qualifier
  */
 
-atomic_type_specifier: ATOMIC LEFT_PAREN type_name RIGHT_PAREN
+atomic_type_specifier: ATOMIC LPAR type_name RPAR
                      ;
 
 type_qualifier: CONST | RESTRICT | VOLATILE | ATOMIC ;
 
 function_specifier: INLINE | NORETURN ;
 
-alignment_specifier: ALIGNAS LEFT_PAREN type_name RIGHT_PAREN
-                   | ALIGNAS LEFT_PAREN constant_expression RIGHT_PAREN
+alignment_specifier: ALIGNAS LPAR type_name RPAR
+                   | ALIGNAS LPAR constant_expression RPAR
                    ;
 
 declarator: direct_declarator
@@ -258,19 +259,19 @@ declarator: direct_declarator
           ;
 
 direct_declarator: IDENTIFIER
-                 | LEFT_PAREN declarator RIGHT_PAREN
-                 | direct_declarator LEFT_BRACKET RIGHT_BRACKET
-                 | direct_declarator LEFT_BRACKET type_qualifier_list RIGHT_BRACKET
-                 | direct_declarator LEFT_BRACKET assignment_expression RIGHT_BRACKET
-                 | direct_declarator LEFT_BRACKET type_qualifier_list assignment_expression RIGHT_BRACKET
-                 | direct_declarator LEFT_BRACKET STATIC assignment_expression RIGHT_BRACKET
-                 | direct_declarator LEFT_BRACKET STATIC type_qualifier_list assignment_expression RIGHT_BRACKET
-                 | direct_declarator LEFT_BRACKET type_qualifier_list STATIC assignment_expression RIGHT_BRACKET
-                 | direct_declarator LEFT_BRACKET ASTERISK RIGHT_BRACKET
-                 | direct_declarator LEFT_BRACKET type_qualifier_list ASTERISK RIGHT_BRACKET
-                 | direct_declarator LEFT_PAREN parameter_type_list RIGHT_PAREN
-                 | direct_declarator LEFT_PAREN RIGHT_PAREN
-                 | direct_declarator LEFT_PAREN identifier_list RIGHT_PAREN
+                 | LPAR declarator RPAR
+                 | direct_declarator LSQB RSQB
+                 | direct_declarator LSQB type_qualifier_list RSQB
+                 | direct_declarator LSQB assignment_expression RSQB
+                 | direct_declarator LSQB type_qualifier_list assignment_expression RSQB
+                 | direct_declarator LSQB STATIC assignment_expression RSQB
+                 | direct_declarator LSQB STATIC type_qualifier_list assignment_expression RSQB
+                 | direct_declarator LSQB type_qualifier_list STATIC assignment_expression RSQB
+                 | direct_declarator LSQB AST RSQB
+                 | direct_declarator LSQB type_qualifier_list AST RSQB
+                 | direct_declarator LPAR parameter_type_list RPAR
+                 | direct_declarator LPAR RPAR
+                 | direct_declarator LPAR identifier_list RPAR
                  ;
 
 /*
@@ -278,10 +279,10 @@ typedef_name: IDENTIFIER
             ;
 */
 
-pointer: ASTERISK
-       | ASTERISK type_qualifier_list
-       | ASTERISK pointer
-       | ASTERISK type_qualifier_list pointer
+pointer: AST
+       | AST type_qualifier_list
+       | AST pointer
+       | AST type_qualifier_list pointer
        ;
 
 type_qualifier_list: type_qualifier
@@ -289,7 +290,7 @@ type_qualifier_list: type_qualifier
                    ;
 
 parameter_type_list: parameter_list
-                   | parameter_list COMMA ELLIPSIS
+                   | parameter_list COMMA HELLIP
                    ;
 
 parameter_list: parameter_declaration
@@ -314,32 +315,32 @@ abstract_declarator: pointer
                    | pointer direct_abstract_declarator
                    ;
 
-direct_abstract_declarator: LEFT_PAREN abstract_declarator RIGHT_PAREN
-                          | LEFT_BRACKET RIGHT_BRACKET
-                          | direct_abstract_declarator LEFT_BRACKET RIGHT_BRACKET
-                          | LEFT_BRACKET type_qualifier_list RIGHT_BRACKET
-                          | direct_abstract_declarator LEFT_BRACKET type_qualifier_list RIGHT_BRACKET
-                          | LEFT_BRACKET assignment_expression RIGHT_BRACKET
-                          | direct_abstract_declarator LEFT_BRACKET assignment_expression RIGHT_BRACKET
-                          | LEFT_BRACKET type_qualifier_list assignment_expression RIGHT_BRACKET
-                          | direct_abstract_declarator LEFT_BRACKET type_qualifier_list assignment_expression RIGHT_BRACKET
-                          | LEFT_BRACKET STATIC assignment_expression RIGHT_BRACKET
-                          | direct_abstract_declarator LEFT_BRACKET STATIC assignment_expression RIGHT_BRACKET
-                          | LEFT_BRACKET STATIC type_qualifier_list assignment_expression RIGHT_BRACKET
-                          | direct_abstract_declarator LEFT_BRACKET STATIC type_qualifier_list assignment_expression RIGHT_BRACKET
-                          | LEFT_BRACKET type_qualifier_list STATIC assignment_expression RIGHT_BRACKET
-                          | direct_abstract_declarator LEFT_BRACKET type_qualifier_list STATIC assignment_expression RIGHT_BRACKET
-                          | LEFT_BRACKET ASTERISK RIGHT_BRACKET
-                          | direct_abstract_declarator LEFT_BRACKET ASTERISK RIGHT_BRACKET
-                          | LEFT_PAREN RIGHT_PAREN
-                          | direct_abstract_declarator LEFT_PAREN RIGHT_PAREN
-                          | LEFT_PAREN parameter_type_list RIGHT_PAREN
-                          | direct_abstract_declarator LEFT_PAREN parameter_type_list RIGHT_PAREN
+direct_abstract_declarator: LPAR abstract_declarator RPAR
+                          | LSQB RSQB
+                          | direct_abstract_declarator LSQB RSQB
+                          | LSQB type_qualifier_list RSQB
+                          | direct_abstract_declarator LSQB type_qualifier_list RSQB
+                          | LSQB assignment_expression RSQB
+                          | direct_abstract_declarator LSQB assignment_expression RSQB
+                          | LSQB type_qualifier_list assignment_expression RSQB
+                          | direct_abstract_declarator LSQB type_qualifier_list assignment_expression RSQB
+                          | LSQB STATIC assignment_expression RSQB
+                          | direct_abstract_declarator LSQB STATIC assignment_expression RSQB
+                          | LSQB STATIC type_qualifier_list assignment_expression RSQB
+                          | direct_abstract_declarator LSQB STATIC type_qualifier_list assignment_expression RSQB
+                          | LSQB type_qualifier_list STATIC assignment_expression RSQB
+                          | direct_abstract_declarator LSQB type_qualifier_list STATIC assignment_expression RSQB
+                          | LSQB AST RSQB
+                          | direct_abstract_declarator LSQB AST RSQB
+                          | LPAR RPAR
+                          | direct_abstract_declarator LPAR RPAR
+                          | LPAR parameter_type_list RPAR
+                          | direct_abstract_declarator LPAR parameter_type_list RPAR
                           ;
 
 initializer: assignment_expression
-           | LEFT_BRACE initializer_list RIGHT_BRACE
-           | LEFT_BRACE identifier_list COMMA RIGHT_BRACE
+           | LCUB initializer_list RCUB
+           | LCUB identifier_list COMMA RCUB
            ;
 
 initializer_list: initializer
@@ -348,18 +349,18 @@ initializer_list: initializer
                 | initializer_list COMMA designation initializer
                 ;
 
-designation: designation_list ASSIGN
+designation: designation_list EQ
            ;
 
 designation_list: designator
                 | designation_list designator
                 ;
 
-designator: LEFT_BRACKET constant_expression RIGHT_BRACKET
-          | DOT IDENTIFIER
+designator: LSQB constant_expression RSQB
+          | PERIOD IDENTIFIER
           ;
 
-static_assert_declaration: STATIC_ASSERT LEFT_PAREN constant_expression COMMA STRING_LITERAL RIGHT_PAREN SEMICOLON
+static_assert_declaration: STATIC_ASSERT LPAR constant_expression COMMA STRING_LITERAL RPAR SEMI
                          ;
 
 statement: labeled_statement
@@ -376,8 +377,8 @@ labeled_statement: IDENTIFIER COLON statement
                  | DEFAULT COLON statement
                  ;
 
-compound_statement: LEFT_BRACE RIGHT_BRACE
-                  | LEFT_BRACE block_item_list RIGHT_BRACE
+compound_statement: LCUB RCUB
+                  | LCUB block_item_list RCUB
                   ;
 
 block_item_list: block_item
@@ -388,36 +389,36 @@ block_item: declaration
           | statement
           ;
 
-expression_statement: SEMICOLON
-                    | expression SEMICOLON
+expression_statement: SEMI
+                    | expression SEMI
                     ;
 
-selection_statement: IF LEFT_PAREN expression RIGHT_PAREN statement
-                   | IF LEFT_PAREN expression RIGHT_PAREN statement ELSE statement
-                   | SWITCH LEFT_PAREN expression RIGHT_PAREN statement
+selection_statement: IF LPAR expression RPAR statement
+                   | IF LPAR expression RPAR statement ELSE statement
+                   | SWITCH LPAR expression RPAR statement
                    ;
 
-iteration_statement: WHILE LEFT_PAREN expression RIGHT_PAREN statement
-                   | DO statement WHILE LEFT_PAREN expression RIGHT_PAREN SEMICOLON
-                   | FOR LEFT_PAREN SEMICOLON SEMICOLON RIGHT_PAREN statement
-                   | FOR LEFT_PAREN expression SEMICOLON SEMICOLON RIGHT_PAREN statement
-                   | FOR LEFT_PAREN SEMICOLON expression SEMICOLON RIGHT_PAREN statement
-                   | FOR LEFT_PAREN SEMICOLON SEMICOLON expression RIGHT_PAREN statement
-                   | FOR LEFT_PAREN expression SEMICOLON expression SEMICOLON RIGHT_PAREN statement
-                   | FOR LEFT_PAREN expression SEMICOLON SEMICOLON expression RIGHT_PAREN statement
-                   | FOR LEFT_PAREN SEMICOLON expression SEMICOLON expression RIGHT_PAREN statement
-                   | FOR LEFT_PAREN expression SEMICOLON expression SEMICOLON expression RIGHT_PAREN statement
-                   | FOR LEFT_PAREN declaration SEMICOLON RIGHT_PAREN statement
-                   | FOR LEFT_PAREN declaration expression SEMICOLON RIGHT_PAREN statement
-                   | FOR LEFT_PAREN declaration SEMICOLON expression RIGHT_PAREN statement
-                   | FOR LEFT_PAREN declaration expression SEMICOLON expression RIGHT_PAREN statement
+iteration_statement: WHILE LPAR expression RPAR statement
+                   | DO statement WHILE LPAR expression RPAR SEMI
+                   | FOR LPAR SEMI SEMI RPAR statement
+                   | FOR LPAR expression SEMI SEMI RPAR statement
+                   | FOR LPAR SEMI expression SEMI RPAR statement
+                   | FOR LPAR SEMI SEMI expression RPAR statement
+                   | FOR LPAR expression SEMI expression SEMI RPAR statement
+                   | FOR LPAR expression SEMI SEMI expression RPAR statement
+                   | FOR LPAR SEMI expression SEMI expression RPAR statement
+                   | FOR LPAR expression SEMI expression SEMI expression RPAR statement
+                   | FOR LPAR declaration SEMI RPAR statement
+                   | FOR LPAR declaration expression SEMI RPAR statement
+                   | FOR LPAR declaration SEMI expression RPAR statement
+                   | FOR LPAR declaration expression SEMI expression RPAR statement
                    ;
 
-jump_statement: GOTO IDENTIFIER SEMICOLON
-              | CONTINUE SEMICOLON
-              | BREAK SEMICOLON
-              | RETURN SEMICOLON
-              | RETURN expression SEMICOLON
+jump_statement: GOTO IDENTIFIER SEMI
+              | CONTINUE SEMI
+              | BREAK SEMI
+              | RETURN SEMI
+              | RETURN expression SEMI
               ;
 
 translation_unit: external_declaration
@@ -443,4 +444,4 @@ auto yy::parser::error(parser::location_type const &yylloc,
   std::cerr << yylloc << ": " << msg << std::endl;
 }
 
-/* vim: set ts=2 sw=2 et: */
+/* vim: set ft=yacc ts=2 sw=2 et: */
