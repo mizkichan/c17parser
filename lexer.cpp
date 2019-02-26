@@ -5,7 +5,6 @@
 #include <string_view>
 #include <vector>
 
-template <typename InT> extern auto lex_init(InT &) -> void;
 extern auto yylex(void) -> yy::parser::symbol_type;
 static auto check_type(std::string const &, yy::parser::location_type const &)
     -> yy::parser::symbol_type;
@@ -15,12 +14,12 @@ static auto is_enumeration_constant(std::string_view) -> bool;
 static auto is_typedef_name(std::string_view) -> bool;
 
 extern std::istream *yyin;
-extern std::string *yyfile;
+extern std::optional<std::string> yyfile;
 static std::vector<std::string> enum_consts;
 static std::vector<std::string> typedef_names;
 
 std::istream *yyin = &std::cin;
-std::string *yyfile = nullptr;
+std::optional<std::string> yyfile;
 
 auto advance(std::string_view &line, std::string::size_type yyleng,
              yy::parser::location_type &yylloc) -> void {
@@ -36,7 +35,10 @@ auto advance(std::string_view &line, std::string::size_type yyleng,
   }
 
 #define TOKEN(S, T)                                                            \
-  STRING(S, { return yy::parser::symbol_type(yy::parser::token::T, yylloc); })
+  STRING(S, {                                                                  \
+    auto copied = yylloc; /* sucks */                                          \
+    return yy::parser::symbol_type(yy::parser::token::T, std::move(copied));   \
+  })
 
 #define REGEX(S, ACTION)                                                       \
   {                                                                            \
@@ -54,7 +56,14 @@ auto advance(std::string_view &line, std::string::size_type yyleng,
 auto yylex(void) -> yy::parser::symbol_type {
   static std::string buffer;
   static std::string_view line;
-  static yy::parser::location_type yylloc(yyfile, 0, 0);
+  static yy::parser::location_type yylloc(
+      []() {
+        if (yyfile.has_value())
+          return &*yyfile;
+        else
+          return static_cast<std::string *>(nullptr);
+      }(),
+      0, 0);
 
   while (*yyin) {
     if (line.empty()) {

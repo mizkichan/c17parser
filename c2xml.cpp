@@ -6,7 +6,7 @@
 #include <iostream>
 
 extern std::istream *yyin;
-extern std::string *yyfile;
+extern std::optional<std::string> yyfile;
 
 extern auto main(int argc, char **argv) -> int {
   using boost::program_options::command_line_parser;
@@ -51,13 +51,9 @@ extern auto main(int argc, char **argv) -> int {
   }
 
   // FIXME dirty
-  std::ifstream in;
-  std::string file;
   if (options.count("input")) {
-    file = options["input"].as<std::string>();
-    in = std::ifstream(file.c_str());
-    yyin = &in;
-    yyfile = &file;
+    yyfile = options["input"].as<std::string>();
+    yyin = new std::ifstream(yyfile->c_str());
   }
 
   if (options.count("output")) {
