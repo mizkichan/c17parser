@@ -8,7 +8,7 @@ extern auto yylex(void) -> yy::parser::symbol_type;
 extern auto add_enumeration_constant(std::string_view) -> void;
 extern auto add_typedef_name(std::string_view) -> void;
 
-extern std::istream *yyin;
-extern std::optional<std::string> yyfile;
+extern std::istream *input;
+extern std::optional<std::string> filename;
 
 #endif

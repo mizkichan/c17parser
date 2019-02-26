@@ -46,8 +46,8 @@ extern auto main(int argc, char **argv) -> int {
   }
 
   if (options.count("input")) {
-    yyfile = options["input"].as<std::string>();
-    yyin = new std::ifstream(yyfile->c_str());
+    filename = options["input"].as<std::string>();
+    input = new std::ifstream(filename->c_str());
   }
 
   if (options.count("output")) {

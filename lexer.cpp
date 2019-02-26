@@ -11,32 +11,30 @@ static std::vector<std::string> typedef_names = {
     "__builtin_va_list",
 };
 
-std::istream *yyin = &std::cin;
-std::optional<std::string> yyfile;
+std::istream *input = &std::cin;
+std::optional<std::string> filename;
 
-auto advance(std::string_view &line, std::string::size_type yyleng,
-             yy::parser::location_type &yylloc) -> void {
-  line.remove_prefix(yyleng);
-  yylloc.begin.column = yylloc.end.column;
-  yylloc.end.column += yyleng;
+auto advance(std::string_view &line, std::string::size_type length,
+             yy::parser::location_type &location) -> void {
+  line.remove_prefix(length);
+  location.begin.column = location.end.column;
+  location.end.column += length;
 }
 
 #define STRING(S, T)                                                           \
   if (line.find((S)) == 0) {                                                   \
-    advance(line, std::size((S)) - 1, yylloc);                                 \
-    auto copied = yylloc; /* sucks */                                          \
+    advance(line, std::size((S)) - 1, location);                               \
+    auto copied = location; /* sucks */                                        \
     return yy::parser::symbol_type(yy::parser::token::T, std::move(copied));   \
   }
 
 #define REGEX(S, ACTION)                                                       \
   {                                                                            \
-    auto e = std::regex((S), std::regex_constants::optimize);                  \
-    std::smatch m;                                                             \
+    auto e = std::regex((S));                                                  \
     auto ownedline = std::string(line); /* sucks */                            \
-    if (std::regex_search(ownedline, m, e,                                     \
+    if (std::regex_search(ownedline, match, e,                                 \
                           std::regex_constants::match_continuous)) {           \
-      advance(line, m.length(), yylloc);                                       \
-      auto yytext = m.str();                                                   \
+      advance(line, match.length(), location);                                 \
       ACTION                                                                   \
     }                                                                          \
   }
@@ -44,21 +42,23 @@ auto advance(std::string_view &line, std::string::size_type yyleng,
 auto yylex(void) -> yy::parser::symbol_type {
   static std::string buffer;
   static std::string_view line;
-  static yy::parser::location_type yylloc(
+  static yy::parser::location_type location(
       []() {
-        if (yyfile.has_value())
-          return &*yyfile;
+        if (filename.has_value())
+          return &*filename;
         else
           return static_cast<std::string *>(nullptr);
       }(),
       0, 0);
 
-  while (*yyin) {
+  std::smatch match;
+
+  while (*input) {
     if (line.empty()) {
-      std::getline(*yyin, buffer);
+      std::getline(*input, buffer);
       line = buffer;
-      yylloc.begin.line = ++yylloc.end.line;
-      yylloc.begin.column = yylloc.end.column = 1;
+      location.begin.line = ++location.end.line;
+      location.begin.column = location.end.column = 1;
     }
 
     STRING("_Static_assert", STATIC_ASSERT);
@@ -153,34 +153,36 @@ auto yylex(void) -> yy::parser::symbol_type {
     STRING("}", RCUB);
     STRING("~", TILDE);
 
-    REGEX("[_[:alpha:]][_[:alnum:]]*", { return check_type(yytext, yylloc); });
+    REGEX("[_[:alpha:]][_[:alnum:]]*",
+          { return check_type(match.str(), location); });
     REGEX("[1-9][0-9]*",
-          { return yy::parser::make_INTEGER_CONSTANT(yytext, yylloc); });
+          { return yy::parser::make_INTEGER_CONSTANT(match.str(), location); });
     REGEX("0[0-7]*",
-          { return yy::parser::make_INTEGER_CONSTANT(yytext, yylloc); });
+          { return yy::parser::make_INTEGER_CONSTANT(match.str(), location); });
     REGEX("(?:0x|0X)[:alnum:]+",
-          { return yy::parser::make_INTEGER_CONSTANT(yytext, yylloc); });
-    REGEX(R"("[^"]*")",
-          { return yy::parser::make_STRING_LITERAL(yytext, yylloc); });
+          { return yy::parser::make_INTEGER_CONSTANT(match.str(), location); });
+    REGEX(R"("([^"])*")",
+          { return yy::parser::make_STRING_LITERAL(match.str(1), location); });
 
     REGEX(R"([ \t\v\f]+)", { continue; });
 
     REGEX(".", {
-      std::cerr << yylloc << ": '" << yytext << "'" << std::endl;
+      std::cerr << location << ": '" << match.str() << "'" << std::endl;
       std::exit(EXIT_FAILURE);
     });
   }
 
-  return yy::parser::make_END_OF_FILE(yylloc);
+  return yy::parser::make_END_OF_FILE(location);
 }
 
-auto check_type(std::string const &id, yy::parser::location_type const &yylloc)
+auto check_type(std::string const &id,
+                yy::parser::location_type const &location)
     -> yy::parser::symbol_type {
   if (is_enumeration_constant(id))
-    return yy::parser::make_ENUMERATION_CONSTANT(id, yylloc);
+    return yy::parser::make_ENUMERATION_CONSTANT(id, location);
   if (is_typedef_name(id))
-    return yy::parser::make_TYPEDEF_NAME(id, yylloc);
-  return yy::parser::make_IDENTIFIER(id, yylloc);
+    return yy::parser::make_TYPEDEF_NAME(id, location);
+  return yy::parser::make_IDENTIFIER(id, location);
 }
 
 auto add_enumeration_constant(std::string_view const id) -> void {

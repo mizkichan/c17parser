@@ -480,9 +480,9 @@ declaration_list: declaration
 
 %%
 
-auto yy::parser::error(parser::location_type const &yylloc,
+auto yy::parser::error(parser::location_type const &location,
                        std::string const &msg) -> void {
-  std::cerr << yylloc << ": " << msg << std::endl;
+  std::cerr << location << ": " << msg << std::endl;
 }
 
 /* vim: set ft=yacc ts=2 sw=2 et: */
