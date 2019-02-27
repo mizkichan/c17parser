@@ -3,8 +3,10 @@
 
 #include "parser.tab.hpp"
 #include <optional>
+#include <string_view>
 
-extern auto yylex(void) -> yy::parser::symbol_type;
+extern auto yylex(yy::parser::semantic_type *, yy::parser::location_type *)
+    -> int;
 extern auto add_enumeration_constant(std::string_view) -> void;
 extern auto add_typedef_name(std::string_view) -> void;
 

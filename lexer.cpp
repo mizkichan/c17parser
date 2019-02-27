@@ -1,8 +1,7 @@
 #include "lexer.hpp"
 #include <regex>
 
-static auto check_type(std::string const &, yy::parser::location_type const &)
-    -> yy::parser::symbol_type;
+static auto check_type(std::string const &, yy::parser::semantic_type *) -> int;
 static auto is_enumeration_constant(std::string_view) -> bool;
 static auto is_typedef_name(std::string_view) -> bool;
 
@@ -15,17 +14,17 @@ std::istream *input = &std::cin;
 std::optional<std::string> filename;
 
 auto advance(std::string_view &line, std::string::size_type length,
-             yy::parser::location_type &location) -> void {
+             yy::parser::location_type *location) -> void {
   line.remove_prefix(length);
-  location.begin.column = location.end.column;
-  location.end.column += length;
+  location->begin.column = location->end.column;
+  location->end.column += length;
 }
 
 #define STRING(S, T)                                                           \
   if (line.find((S)) == 0) {                                                   \
     advance(line, std::size((S)) - 1, location);                               \
-    auto copied = location; /* sucks */                                        \
-    return yy::parser::symbol_type(yy::parser::token::T, std::move(copied));   \
+    lval->emplace<std::string>((S));                                           \
+    return yy::parser::token::T;                                               \
   }
 
 #define REGEX(S, ACTION)                                                       \
@@ -39,17 +38,10 @@ auto advance(std::string_view &line, std::string::size_type length,
     }                                                                          \
   }
 
-auto yylex(void) -> yy::parser::symbol_type {
+auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
+    -> int {
   static std::string buffer;
   static std::string_view line;
-  static yy::parser::location_type location(
-      []() {
-        if (filename.has_value())
-          return &*filename;
-        else
-          return static_cast<std::string *>(nullptr);
-      }(),
-      0, 0);
 
   std::smatch match;
 
@@ -57,8 +49,8 @@ auto yylex(void) -> yy::parser::symbol_type {
     if (line.empty()) {
       std::getline(*input, buffer);
       line = buffer;
-      location.begin.line = ++location.end.line;
-      location.begin.column = location.end.column = 1;
+      location->begin.line = ++location->end.line;
+      location->begin.column = location->end.column = 1;
     }
 
     STRING("_Static_assert", STATIC_ASSERT);
@@ -154,15 +146,23 @@ auto yylex(void) -> yy::parser::symbol_type {
     STRING("~", TILDE);
 
     REGEX("[_[:alpha:]][_[:alnum:]]*",
-          { return check_type(match.str(), location); });
-    REGEX("[1-9][0-9]*",
-          { return yy::parser::make_INTEGER_CONSTANT(match.str(), location); });
-    REGEX("0[0-7]*",
-          { return yy::parser::make_INTEGER_CONSTANT(match.str(), location); });
-    REGEX("(?:0x|0X)[:alnum:]+",
-          { return yy::parser::make_INTEGER_CONSTANT(match.str(), location); });
-    REGEX(R"("([^"])*")",
-          { return yy::parser::make_STRING_LITERAL(match.str(1), location); });
+          { return check_type(match.str(), lval); });
+    REGEX("[1-9][0-9]*", {
+      lval->emplace<std::string>(match.str());
+      return yy::parser::token::INTEGER_CONSTANT;
+    });
+    REGEX("0[0-7]*", {
+      lval->emplace<std::string>(match.str());
+      return yy::parser::token::INTEGER_CONSTANT;
+    });
+    REGEX("(?:0x|0X)[:alnum:]+", {
+      lval->emplace<std::string>(match.str());
+      return yy::parser::token::INTEGER_CONSTANT;
+    });
+    REGEX(R"("[^"]*")", {
+      lval->emplace<std::string>(match.str());
+      return yy::parser::token::STRING_LITERAL;
+    });
 
     REGEX(R"([ \t\v\f]+)", { continue; });
 
@@ -172,17 +172,19 @@ auto yylex(void) -> yy::parser::symbol_type {
     });
   }
 
-  return yy::parser::make_END_OF_FILE(location);
+  return yy::parser::token::END_OF_FILE;
 }
 
-auto check_type(std::string const &id,
-                yy::parser::location_type const &location)
-    -> yy::parser::symbol_type {
-  if (is_enumeration_constant(id))
-    return yy::parser::make_ENUMERATION_CONSTANT(id, location);
-  if (is_typedef_name(id))
-    return yy::parser::make_TYPEDEF_NAME(id, location);
-  return yy::parser::make_IDENTIFIER(id, location);
+auto check_type(std::string const &id, yy::parser::semantic_type *const lval)
+    -> int {
+  lval->emplace<std::string>(id);
+  if (is_enumeration_constant(id)) {
+    return yy::parser::token::ENUMERATION_CONSTANT;
+  } else if (is_typedef_name(id)) {
+    return yy::parser::token::TYPEDEF_NAME;
+  } else {
+    return yy::parser::token::IDENTIFIER;
+  }
 }
 
 auto add_enumeration_constant(std::string_view const id) -> void {
