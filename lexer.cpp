@@ -1,24 +1,27 @@
 #include "lexer.hpp"
+#include <boost/preprocessor/cat.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <regex>
+#include <unordered_set>
 
 using ptree = boost::property_tree::ptree;
 
 static auto check_type(std::string const &, yy::parser::semantic_type *) -> int;
-static auto is_enumeration_constant(std::string_view) -> bool;
-static auto is_typedef_name(std::string_view) -> bool;
+static auto is_enumeration_constant(std::string const &) -> bool;
+static auto is_typedef_name(std::string const &) -> bool;
 
-static std::vector<std::string> enum_consts;
-static std::vector<std::string> typedef_names = {
+static std::unordered_set<std::string> enum_consts;
+static std::unordered_set<std::string> typedef_names = {
     "__builtin_va_list",
 };
 
 std::istream *input = &std::cin;
 std::optional<std::string> filename;
 
-auto advance(std::string_view &line, std::string::size_type length,
+auto advance(std::string &line, std::string::size_type length,
              yy::parser::location_type *location) -> void {
-  line.remove_prefix(length);
+  line = std::string(std::make_move_iterator(std::next(line.cbegin(), length)),
+                     std::make_move_iterator(line.cend()));
   location->begin.column = location->end.column;
   location->end.column += length;
 }
@@ -31,27 +34,22 @@ auto advance(std::string_view &line, std::string::size_type length,
   }
 
 #define REGEX(S, ACTION)                                                       \
-  {                                                                            \
-    auto e = std::regex((S));                                                  \
-    auto ownedline = std::string(line); /* sucks */                            \
-    if (std::regex_search(ownedline, match, e,                                 \
-                          std::regex_constants::match_continuous)) {           \
-      advance(line, match.length(), location);                                 \
-      ACTION                                                                   \
-    }                                                                          \
+  static auto BOOST_PP_CAT(regex, __LINE__) =                                  \
+      std::regex((S), std::regex_constants::optimize);                         \
+  if (std::regex_search(line, match, BOOST_PP_CAT(regex, __LINE__),            \
+                        std::regex_constants::match_continuous)) {             \
+    advance(line, match.length(), location);                                   \
+    ACTION                                                                     \
   }
 
 auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
     -> int {
-  static std::string buffer;
-  static std::string_view line;
-
+  static std::string line;
   std::smatch match;
 
   while (*input) {
     if (line.empty()) {
-      std::getline(*input, buffer);
-      line = buffer;
+      std::getline(*input, line);
       location->begin.line = ++location->end.line;
       location->begin.column = location->end.column = 1;
     }
@@ -187,26 +185,24 @@ auto check_type(std::string const &id, yy::parser::semantic_type *const lval)
   }
 }
 
-auto add_enumeration_constant(std::string_view const id) -> void {
+auto add_enumeration_constant(std::string &&id) -> void {
   if (!is_enumeration_constant(id)) {
-    enum_consts.emplace_back(id);
+    enum_consts.emplace(std::move(id));
   }
 }
 
-auto is_enumeration_constant(std::string_view const id) -> bool {
-  return std::find(enum_consts.cbegin(), enum_consts.cend(), id) !=
-         enum_consts.cend();
+auto is_enumeration_constant(std::string const &id) -> bool {
+  return enum_consts.find(id) != enum_consts.cend();
 }
 
-auto add_typedef_name(std::string_view const id) -> void {
+auto add_typedef_name(std::string &&id) -> void {
   if (!is_typedef_name(id)) {
-    typedef_names.emplace_back(id);
+    typedef_names.emplace(std::move(id));
   }
 }
 
-auto is_typedef_name(std::string_view const id) -> bool {
-  return std::find(typedef_names.cbegin(), typedef_names.cend(), id) !=
-         typedef_names.cend();
+auto is_typedef_name(std::string const &id) -> bool {
+  return typedef_names.find(id) != typedef_names.cend();
 }
 
 // vim: set ts=2 sw=2 et:
