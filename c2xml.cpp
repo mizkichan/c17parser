@@ -1,7 +1,11 @@
 #include "lexer.hpp"
 #include "parser.tab.hpp"
 #include <boost/program_options.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 #include <fstream>
+
+using ptree = boost::property_tree::ptree;
 
 extern auto main(int argc, char **argv) -> int {
   using boost::program_options::command_line_parser;
@@ -50,12 +54,24 @@ extern auto main(int argc, char **argv) -> int {
     input = new std::ifstream(filename->c_str());
   }
 
+  auto output = &std::cout;
   if (options.count("output")) {
+    output = new std::ofstream(options["output"].as<std::string>());
   }
 
-  yy::parser yyparse;
+  ptree result;
+  auto yyparse = yy::parser(result);
   yyparse.set_debug_level(options.count("verbose"));
-  return yyparse();
+  if (yyparse() == 0) {
+    boost::property_tree::write_xml(
+        *output, result,
+        boost::property_tree::xml_writer_make_settings<ptree::key_type>(' ',
+                                                                        1));
+    *output << std::endl;
+    return EXIT_SUCCESS;
+  } else {
+    return EXIT_FAILURE;
+  }
 }
 
 // vim: set ts=2 sw=2 et:

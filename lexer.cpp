@@ -1,5 +1,8 @@
 #include "lexer.hpp"
+#include <boost/property_tree/ptree.hpp>
 #include <regex>
+
+using ptree = boost::property_tree::ptree;
 
 static auto check_type(std::string const &, yy::parser::semantic_type *) -> int;
 static auto is_enumeration_constant(std::string_view) -> bool;
@@ -23,7 +26,7 @@ auto advance(std::string_view &line, std::string::size_type length,
 #define STRING(S, T)                                                           \
   if (line.find((S)) == 0) {                                                   \
     advance(line, std::size((S)) - 1, location);                               \
-    lval->emplace<std::string>((S));                                           \
+    lval->emplace<ptree>((S));                                                 \
     return yy::parser::token::T;                                               \
   }
 
@@ -148,28 +151,25 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
     REGEX("[_[:alpha:]][_[:alnum:]]*",
           { return check_type(match.str(), lval); });
     REGEX("[1-9][0-9]*", {
-      lval->emplace<std::string>(match.str());
+      lval->emplace<ptree>(match.str());
       return yy::parser::token::INTEGER_CONSTANT;
     });
     REGEX("0[0-7]*", {
-      lval->emplace<std::string>(match.str());
+      lval->emplace<ptree>(match.str());
       return yy::parser::token::INTEGER_CONSTANT;
     });
     REGEX("(?:0x|0X)[:alnum:]+", {
-      lval->emplace<std::string>(match.str());
+      lval->emplace<ptree>(match.str());
       return yy::parser::token::INTEGER_CONSTANT;
     });
     REGEX(R"("[^"]*")", {
-      lval->emplace<std::string>(match.str());
+      lval->emplace<ptree>(match.str());
       return yy::parser::token::STRING_LITERAL;
     });
 
     REGEX(R"([ \t\v\f]+)", { continue; });
 
-    REGEX(".", {
-      std::cerr << location << ": '" << match.str() << "'" << std::endl;
-      std::exit(EXIT_FAILURE);
-    });
+    REGEX(".", { throw yy::parser::syntax_error(*location, match.str()); });
   }
 
   return yy::parser::token::END_OF_FILE;
@@ -177,7 +177,7 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
 
 auto check_type(std::string const &id, yy::parser::semantic_type *const lval)
     -> int {
-  lval->emplace<std::string>(id);
+  lval->emplace<ptree>(id);
   if (is_enumeration_constant(id)) {
     return yy::parser::token::ENUMERATION_CONSTANT;
   } else if (is_typedef_name(id)) {
