@@ -11,6 +11,9 @@ c2xml.o: c2xml.cpp parser.tab.hpp
 lexer.o: lexer.cpp parser.tab.hpp
 parser.tab.o: parser.tab.cpp
 
+%.cpp: %.re
+	re2c -W -o $@ $<
+
 %: %.o
 	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
