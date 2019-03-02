@@ -23,12 +23,24 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
   static size_t lineno = 0;
   yy::parser::token::yytokentype token;
 
+#define YYFILL                                                                 \
+  {                                                                            \
+    if (YYCURSOR == line.cend()) {                                             \
+      if (!std::getline(*input, line)) {                                       \
+        return yy::parser::token::END_OF_FILE;                                 \
+      }                                                                        \
+      ++lineno;                                                                \
+    } else {                                                                   \
+      line = std::string(YYCURSOR, line.cend());                               \
+    }                                                                          \
+    YYCURSOR = line.cbegin();                                                  \
+  }
+
   // clang-format off
   /*!re2c
     re2c:flags:posix-captures = 1;
     re2c:define:YYCTYPE = char;
     re2c:define:YYLIMIT = line.cend();
-    re2c:define:YYFILL = '{ if (!std::getline(*input, line)) return yy::parser::token::END_OF_FILE; YYCURSOR = line.cbegin(); ++lineno; }';
     re2c:define:YYFILL:naked = 1;
   */
   /*!stags:re2c format = 'std::string::const_iterator @@;'; */
