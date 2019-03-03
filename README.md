@@ -1,10 +1,10 @@
 # `c2xml`
 
-A converter whcih processes C preprocessed source code to XML representation of C concrete syntax tree.
+A converter that transformes C preprocessed source code into XML representation of C concrete syntax tree.
 
 ## How to build and use
 
-Requires C++17 compiler, boost, re2c, bison. Clone this reop and `make`. Run `./c2xml [file]`.
+Requires C++17 compiler, boost, re2c, bison. Clone this repo and `make`. Run `./c2xml [file]`.
 
 ## Examples
 
@@ -194,4 +194,15 @@ Then you get:
 </translation_unit>
 ```
 
-Note that `c2xml` input source code must be preprocessed; that is, input code should not include preprocessor directives, such as `#include` adn `#define`.
+Note that `c2xml` input source code must be preprocessed; that is, input code should not include preprocessor directives, such as `#include` and `#define`.
+
+## Things to do
+
+- complete lexical analysis.
+  - character constant
+  - floating constant
+  - escape sequences in string literal
+  - usw.
+- enum parsing needs the lexer hack but not implemented.
+
+I will appreciate any form of your contribution or cooperation.
