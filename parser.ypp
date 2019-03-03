@@ -1,5 +1,6 @@
 %code {
 /* Unqualified "%code" block which will be emitted into .cpp */
+static auto add_typedef_names(ptree const&) -> void;
 }
 
 %code requires {
@@ -664,6 +665,11 @@ declaration
     $$.add_child("declaration_specifiers", $1);
     $$.add_child("init_declarator_list", $2);
     $$.add("SEMI", ";");
+
+    // Do the lexer hack
+    if ($1.get_child_optional("storage_class_specifier.TYPEDEF")) {
+      add_typedef_names($2);
+    }
   }
 | static_assert_declaration
   {
@@ -1865,13 +1871,15 @@ translation_unit
 : external_declaration
   {
     $$.add_child("external_declaration", $1);
-     result.add_child("translation_unit", $$);
+    result = ptree();
+    result.add_child("translation_unit", $$);
   }
 | translation_unit external_declaration
   {
     $$.add_child("translation_unit", $1);
     $$.add_child("external_declaration", $2);
-     result.add_child("translation_unit", $$);
+    result = ptree();
+    result.add_child("translation_unit", $$);
   }
 ;
 
@@ -1919,6 +1927,40 @@ declaration_list
 auto yy::parser::error(parser::location_type const &location,
                        std::string const &msg) -> void {
   std::cerr << location << ": " << msg << std::endl;
+}
+
+static auto add_typedef_names_init_declarator_list(ptree const&) -> void;
+static auto add_typedef_names_init_declarator(ptree const&) -> void;
+static auto add_typedef_names_declarator(ptree const&) -> void;
+static auto add_typedef_names_direct_declarator(ptree const&) -> void;
+
+auto add_typedef_names(ptree const& init_declarator_list) -> void {
+  add_typedef_names_init_declarator_list(init_declarator_list);
+}
+
+auto add_typedef_names_init_declarator_list(ptree const& init_declarator_list) -> void {
+  if (auto const x = init_declarator_list.get_child_optional("init_declarator_list")) {
+    add_typedef_names_init_declarator_list(*x);
+  }
+  add_typedef_names_init_declarator(init_declarator_list.get_child("init_declarator"));
+}
+
+static auto add_typedef_names_init_declarator(ptree const& init_declarator) -> void {
+  add_typedef_names_declarator(init_declarator.get_child("declarator"));
+}
+
+static auto add_typedef_names_declarator(ptree const& declarator) -> void {
+  add_typedef_names_direct_declarator(declarator.get_child("direct_declarator"));
+}
+
+static auto add_typedef_names_direct_declarator(ptree const& direct_declarator) -> void {
+  if (auto const x = direct_declarator.get_child_optional("IDENTIFIER")) {
+    add_typedef_name(x->get_value<std::string>());
+  } else if (auto const x = direct_declarator.get_child_optional("declarator")) {
+    add_typedef_names_declarator(*x);
+  } else if (auto const x = direct_declarator.get_child_optional("direct_declarator")) {
+    add_typedef_names_direct_declarator(*x);
+  }
 }
 
 /* vim: set ft=yacc ts=2 sw=2 et: */

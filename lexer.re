@@ -60,7 +60,7 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
       decimal_constant      = [1-9][0-9]*;
       octal_constant        = "0" [0-7]*;
       hexadecimal_constant  = '0x' [0-9a-zA-Z]+;
-      string_literal        = "\"" ( [^"]* ) "\"";
+      string_literal        = "\"" [^"]* "\"";
 
       "_Alignas"        { token = yy::parser::token::ALIGNAS; break; }
       "_Alignof"        { token = yy::parser::token::ALIGNOF; break; }
@@ -155,10 +155,10 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
       "~"   { token = yy::parser::token::TILDE; break; }
 
       identifier            { token = check_type(yypmatch[0], yypmatch[1], lval); break; }
-      decimal_constant      { token = yy::parser::token::INTEGER_CONSTANT; break; }
-      octal_constant        { token = yy::parser::token::INTEGER_CONSTANT; break; }
-      hexadecimal_constant  { token = yy::parser::token::INTEGER_CONSTANT; break; }
-      string_literal        { token = yy::parser::token::STRING_LITERAL; break; }
+      decimal_constant      { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
+      octal_constant        { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
+      hexadecimal_constant  { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
+      string_literal        { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::STRING_LITERAL; break; }
 
       [ \t\v\f]+  { continue; }
 
