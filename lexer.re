@@ -26,10 +26,12 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
 #define YYFILL                                                                 \
   {                                                                            \
     if (YYCURSOR == line.cend()) {                                             \
-      if (!std::getline(*input, line)) {                                       \
-        return yy::parser::token::END_OF_FILE;                                 \
-      }                                                                        \
-      ++lineno;                                                                \
+      do {                                                                     \
+        if (!std::getline(*input, line)) {                                     \
+          return yy::parser::token::END_OF_FILE;                               \
+        }                                                                      \
+        ++lineno;                                                              \
+      } while (line.empty());                                                  \
     } else {                                                                   \
       line = std::string(YYCURSOR, line.cend());                               \
     }                                                                          \
