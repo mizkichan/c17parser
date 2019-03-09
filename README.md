@@ -1,14 +1,14 @@
 # `c2xml`
 
-A converter that transformes C preprocessed source code into XML representation of C concrete syntax tree.
+A converter that transformes C (preprocessed) source code into XML representation of C concrete syntax tree.
 
 ## How to build and use
 
-Requires C++17 compiler, boost, re2c, bison. Clone this repo and `make`. Run `./c2xml [file]`.
+Requires C++17 compiler, Boost, re2c, bison. Clone this repo and `make`. Run `./c2xml [file]`.
 
 ## Examples
 
-`hello.c`:
+Prepare `hello.c`:
 
 ```c
 int main(void) {
@@ -23,186 +23,177 @@ Run `c2xml`:
 c2xml hello.c
 ```
 
-Then you get:
+Then you will get this XML:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
-<translation_unit>
- <external_declaration>
-  <function_definition>
-   <declaration_specifiers>
-    <type_specifier>
-     <INT>int</INT>
-    </type_specifier>
-   </declaration_specifiers>
+<translation-unit>
+ <external-declaration>
+  <function-definition>
+   <declaration-specifiers>
+    <type-specifier>
+     <keyword>int</keyword>
+    </type-specifier>
+   </declaration-specifiers>
    <declarator>
-    <direct_declarator>
-     <direct_declarator>
-      <IDENTIFIER>main</IDENTIFIER>
-     </direct_declarator>
-     <LPAR>(</LPAR>
-     <parameter_type_list>
-      <parameter_list>
-       <parameter_declaration>
-        <declaration_specifiers>
-         <type_specifier>
-          <VOID>void</VOID>
-         </type_specifier>
-        </declaration_specifiers>
-       </parameter_declaration>
-      </parameter_list>
-     </parameter_type_list>
-     <RPAR>)</RPAR>
-    </direct_declarator>
+    <direct-declarator>
+     <direct-declarator>
+      <identifier>main</identifier>
+     </direct-declarator>
+     <punctuator>(</punctuator>
+     <parameter-type-list>
+      <parameter-list>
+       <parameter-declaration>
+        <declaration-specifiers>
+         <type-specifier>
+          <keyword>void</keyword>
+         </type-specifier>
+        </declaration-specifiers>
+       </parameter-declaration>
+      </parameter-list>
+     </parameter-type-list>
+     <punctuator>)</punctuator>
+    </direct-declarator>
    </declarator>
-   <compound_statement>
-    <LCUB>{</LCUB>
-    <block_item_list>
-     <block_item_list>
-      <block_item>
+   <compound-statement>
+    <punctuator>{</punctuator>
+    <block-item-list>
+     <block-item-list>
+      <block-item>
        <statement>
-        <expression_statement>
+        <expression-statement>
          <expression>
-          <assignment_expression>
-           <conditional_expression>
-            <logical_OR_expression>
-             <logical_AND_expression>
-              <inclusive_OR_expression>
-               <exclusive_OR_expression>
-                <AND_expression>
-                 <equality_expression>
-                  <relational_expression>
-                   <shift_expression>
-                    <additive_expression>
-                     <multiplicative_expression>
-                      <cast_expression>
-                       <unary_expression>
-                        <postfix_expression>
-                         <postfix_expression>
-                          <primary_expression>
-                           <IDENTIFIER>printf</IDENTIFIER>
-                          </primary_expression>
-                         </postfix_expression>
-                         <LPAR>(</LPAR>
-                         <argument_expression_list>
-                          <assignment_expression>
-                           <conditional_expression>
-                            <logical_OR_expression>
-                             <logical_AND_expression>
-                              <inclusive_OR_expression>
-                               <exclusive_OR_expression>
-                                <AND_expression>
-                                 <equality_expression>
-                                  <relational_expression>
-                                   <shift_expression>
-                                    <additive_expression>
-                                     <multiplicative_expression>
-                                      <cast_expression>
-                                       <unary_expression>
-                                        <postfix_expression>
-                                         <primary_expression>
-                                          <STRING_LITERAL>&quot;Hello, world!\n&quot;</STRING_LITERAL>
-                                         </primary_expression>
-                                        </postfix_expression>
-                                       </unary_expression>
-                                      </cast_expression>
-                                     </multiplicative_expression>
-                                    </additive_expression>
-                                   </shift_expression>
-                                  </relational_expression>
-                                 </equality_expression>
-                                </AND_expression>
-                               </exclusive_OR_expression>
-                              </inclusive_OR_expression>
-                             </logical_AND_expression>
-                            </logical_OR_expression>
-                           </conditional_expression>
-                          </assignment_expression>
-                         </argument_expression_list>
-                         <RPAR>)</RPAR>
-                        </postfix_expression>
-                       </unary_expression>
-                      </cast_expression>
-                     </multiplicative_expression>
-                    </additive_expression>
-                   </shift_expression>
-                  </relational_expression>
-                 </equality_expression>
-                </AND_expression>
-               </exclusive_OR_expression>
-              </inclusive_OR_expression>
-             </logical_AND_expression>
-            </logical_OR_expression>
-           </conditional_expression>
-          </assignment_expression>
+          <assignment-expression>
+           <conditional-expression>
+            <logical-OR-expression>
+             <logical-AND-expression>
+              <inclusive-OR-expression>
+               <exclusive-OR-expression>
+                <AND-expression>
+                 <equality-expression>
+                  <relational-expression>
+                   <shift-expression>
+                    <additive-expression>
+                     <multiplicative-expression>
+                      <cast-expression>
+                       <unary-expression>
+                        <postfix-expression>
+                         <postfix-expression>
+                          <primary-expression>
+                           <identifier>printf</identifier>
+                          </primary-expression>
+                         </postfix-expression>
+                         <punctuator>(</punctuator>
+                         <argument-expression-list>
+                          <assignment-expression>
+                           <conditional-expression>
+                            <logical-OR-expression>
+                             <logical-AND-expression>
+                              <inclusive-OR-expression>
+                               <exclusive-OR-expression>
+                                <AND-expression>
+                                 <equality-expression>
+                                  <relational-expression>
+                                   <shift-expression>
+                                    <additive-expression>
+                                     <multiplicative-expression>
+                                      <cast-expression>
+                                       <unary-expression>
+                                        <postfix-expression>
+                                         <primary-expression>
+                                          <string-literal>&quot;Hello, world!\n&quot;</string-literal>
+                                         </primary-expression>
+                                        </postfix-expression>
+                                       </unary-expression>
+                                      </cast-expression>
+                                     </multiplicative-expression>
+                                    </additive-expression>
+                                   </shift-expression>
+                                  </relational-expression>
+                                 </equality-expression>
+                                </AND-expression>
+                               </exclusive-OR-expression>
+                              </inclusive-OR-expression>
+                             </logical-AND-expression>
+                            </logical-OR-expression>
+                           </conditional-expression>
+                          </assignment-expression>
+                         </argument-expression-list>
+                         <punctuator>)</punctuator>
+                        </postfix-expression>
+                       </unary-expression>
+                      </cast-expression>
+                     </multiplicative-expression>
+                    </additive-expression>
+                   </shift-expression>
+                  </relational-expression>
+                 </equality-expression>
+                </AND-expression>
+               </exclusive-OR-expression>
+              </inclusive-OR-expression>
+             </logical-AND-expression>
+            </logical-OR-expression>
+           </conditional-expression>
+          </assignment-expression>
          </expression>
-         <SEMI>;</SEMI>
-        </expression_statement>
+         <punctuator>;</punctuator>
+        </expression-statement>
        </statement>
-      </block_item>
-     </block_item_list>
-     <block_item>
+      </block-item>
+     </block-item-list>
+     <block-item>
       <statement>
-       <jump_statement>
-        <RETURN>return</RETURN>
+       <jump-statement>
+        <keyword>return</keyword>
         <expression>
-         <assignment_expression>
-          <conditional_expression>
-           <logical_OR_expression>
-            <logical_AND_expression>
-             <inclusive_OR_expression>
-              <exclusive_OR_expression>
-               <AND_expression>
-                <equality_expression>
-                 <relational_expression>
-                  <shift_expression>
-                   <additive_expression>
-                    <multiplicative_expression>
-                     <cast_expression>
-                      <unary_expression>
-                       <postfix_expression>
-                        <primary_expression>
+         <assignment-expression>
+          <conditional-expression>
+           <logical-OR-expression>
+            <logical-AND-expression>
+             <inclusive-OR-expression>
+              <exclusive-OR-expression>
+               <AND-expression>
+                <equality-expression>
+                 <relational-expression>
+                  <shift-expression>
+                   <additive-expression>
+                    <multiplicative-expression>
+                     <cast-expression>
+                      <unary-expression>
+                       <postfix-expression>
+                        <primary-expression>
                          <constant>
-                          <INTEGER_CONSTANT>0</INTEGER_CONSTANT>
+                          <integer-constant>0</integer-constant>
                          </constant>
-                        </primary_expression>
-                       </postfix_expression>
-                      </unary_expression>
-                     </cast_expression>
-                    </multiplicative_expression>
-                   </additive_expression>
-                  </shift_expression>
-                 </relational_expression>
-                </equality_expression>
-               </AND_expression>
-              </exclusive_OR_expression>
-             </inclusive_OR_expression>
-            </logical_AND_expression>
-           </logical_OR_expression>
-          </conditional_expression>
-         </assignment_expression>
+                        </primary-expression>
+                       </postfix-expression>
+                      </unary-expression>
+                     </cast-expression>
+                    </multiplicative-expression>
+                   </additive-expression>
+                  </shift-expression>
+                 </relational-expression>
+                </equality-expression>
+               </AND-expression>
+              </exclusive-OR-expression>
+             </inclusive-OR-expression>
+            </logical-AND-expression>
+           </logical-OR-expression>
+          </conditional-expression>
+         </assignment-expression>
         </expression>
-        <SEMI>;</SEMI>
-       </jump_statement>
+        <punctuator>;</punctuator>
+       </jump-statement>
       </statement>
-     </block_item>
-    </block_item_list>
-    <RCUB>}</RCUB>
-   </compound_statement>
-  </function_definition>
- </external_declaration>
-</translation_unit>
+     </block-item>
+    </block-item-list>
+    <punctuator>}</punctuator>
+   </compound-statement>
+  </function-definition>
+ </external-declaration>
+</translation-unit>
 ```
 
 Note that `c2xml` input source code must be preprocessed; that is, input code should not include preprocessor directives, such as `#include` and `#define`.
-
-## Things to do
-
-- complete lexical analysis.
-  - character constant
-  - floating constant
-  - escape sequences in string literal
-  - usw.
-- enum parsing needs the lexer hack but not implemented.
 
 I will appreciate any form of your contribution or cooperation.
