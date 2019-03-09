@@ -151,6 +151,7 @@ enumeration-constant
 : IDENTIFIER
   { auto&& _1 = $1;
     add_nodes($$)("identifier", _1);
+    // Do the lexer hack
     add_enumeration_constant(std::move(_1)); }
 ;
 

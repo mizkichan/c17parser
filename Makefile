@@ -11,17 +11,17 @@ c2xml.o: c2xml.cpp parser.tab.hpp
 lexer.o: lexer.cpp parser.tab.hpp
 parser.tab.o: parser.tab.cpp
 
-%.cpp: %.re
-	re2c -W -o $@ $<
-
 %: %.o
 	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 %.o: %.cpp
 	$(CXX) $< $(CXXFLAGS) $(CPPFLAGS) -c -o $@
 
+%.cpp: %.re
+	re2c -W -o $@ $<
+
 %.tab.cpp %.tab.hpp: %.ypp
-	bison -d -D api.location.file='"location.hpp"' $<
+	bison -d -D api.location.file=none $<
 
 .PHONY: clean
 clean:
