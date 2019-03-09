@@ -22,6 +22,7 @@ using ptree = boost::property_tree::ptree;
 #include "lexer.hpp"
 }
 
+%define api.value.automove
 %define api.value.type variant
 %define parse.assert
 %define parse.error verbose
@@ -148,7 +149,9 @@ constant
 
 enumeration-constant
 : IDENTIFIER
-  { add_nodes($$)("identifier", $1); add_enumeration_constant(std::move($1)); }
+  { auto&& _1 = $1;
+    add_nodes($$)("identifier", _1);
+    add_enumeration_constant(std::move(_1)); }
 ;
 
 primary-expression
@@ -394,10 +397,11 @@ declaration
   { add_nodes($$)("declaration-specifiers", $1)("punctuator", ";"); }
 | declaration-specifiers init-declarator-list SEMI
   {
-    add_nodes($$)("declaration-specifiers", $1)("init-declarator-list", $2)("punctuator", ";");
+    auto&& _1 = $1; auto&& _2 = $2;
+    add_nodes($$)("declaration-specifiers", _1)("init-declarator-list", _2)("punctuator", ";");
     // Do the lexer hack
-    if ($1.get<std::string>("storage-class-specifier.keyword") == "typedef") {
-      add_typedef_names($2);
+    if (_1.get<std::string>("storage-class-specifier.keyword") == "typedef") {
+      add_typedef_names(_2);
     }
   }
 | static-assert-declaration
