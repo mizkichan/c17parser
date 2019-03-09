@@ -67,29 +67,27 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
   while (true) {
     // clang-format off
     /*!re2c
+      hexadecimal_digit     = [0-9a-fA-F];
+      octal_digit           = [0-7];
       digit                 = [0-9];
       nonzero_digit         = [1-9];
-      octal_digit           = [0-7];
-      hexadecimal_digit     = [0-9a-fA-F];
       nondigit              = [_a-zA-Z];
-      hexadecimal_prefix    = '0x';
-      encoding_prefix       = ( "u8" | 'u' | "L" );
 
       hex_quad              = hexadecimal_digit{4};
-      universal_character_name  = ( "\\u" hex_quad | "\\U" hex_quad hex_quad );
-
-      simple_escape_sequence  = ( "\\'" | "\\\"" | "\\?" | "\\\\" | "\\a" | "\\b" | "\\f" | "\\n" | "\\r" | "\\t" | "\\v" );
-      octal_escape_sequence   = ( "\\" octal_digit{1,3} );
-      hexadecimal_escape_sequence = ( "\\x" hexadecimal_digit+ );
-      escape_sequence       = ( simple_escape_sequence | octal_escape_sequence | hexadecimal_escape_sequence | universal_character_name );
+      universal_character_name  = ( "\\u" hex_quad | "\\U" hex_quad{2} );
 
       identifier_nondigit   = ( nondigit | universal_character_name );
       identifier            = identifier_nondigit ( identifier_nondigit | digit )*;
 
-      // TODO integer-suffix
-      decimal_constant      = nonzero_digit digit*;
-      octal_constant        = "0" octal_digit*;
-      hexadecimal_constant  = hexadecimal_prefix hexadecimal_digit+;
+      long_long_suffix      = ( "ll" | "LL" );
+      long_suffix           = 'l';
+      unsigned_suffix       = 'u';
+      integer_suffix        = ( unsigned_suffix long_suffix?  | unsigned_suffix long_long_suffix | long_suffix unsigned_suffix?  | long_long_suffix unsigned_suffix? );
+      hexadecimal_prefix    = '0x';
+      hexadecimal_constant  = ( hexadecimal_prefix hexadecimal_digit+ );
+      octal_constant        = ( "0" octal_digit* );
+      decimal_constant      = ( nonzero_digit digit* );
+      integer_constant      = decimal_constant integer_suffix?  | octal_constant integer_suffix?  | hexadecimal_constant integer_suffix?;
 
       sign                  = [+-];
       digit_sequence        = digit+;
@@ -101,14 +99,19 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
       fractional_constant   = ( digit_sequence? "." digit_sequence | digit_sequence "." );
       hexadecimal_floating_constant = ( hexadecimal_prefix hexadecimal_fractional_constant binary_exponent_part floating_suffix? | hexadecimal_prefix hexadecimal_digit_sequence binary_exponent_part floating_suffix? );
       decimal_floating_constant = ( fractional_constant exponent_part? floating_suffix? | digit_sequence exponent_part floating_suffix? );
-      floating_constant     = ( decimal_floating_constant | hexadecimal_floating_constant );
+      floating_constant     = decimal_floating_constant | hexadecimal_floating_constant;
 
+      hexadecimal_escape_sequence = ( "\\x" hexadecimal_digit+ );
+      octal_escape_sequence   = ( "\\" octal_digit{1,3} );
+      simple_escape_sequence  = ( "\\'" | "\\\"" | "\\?" | "\\\\" | "\\a" | "\\b" | "\\f" | "\\n" | "\\r" | "\\t" | "\\v" );
+      escape_sequence       = ( simple_escape_sequence | octal_escape_sequence | hexadecimal_escape_sequence | universal_character_name );
       c_char                = ( [^'\\] | escape_sequence );
       c_char_sequence       = c_char+;
       character_constant    = ( "'" | "L'" | 'u\'' ) c_char_sequence "'";
 
       s_char                = ( [^"\\] | escape_sequence );
       s_char_sequence       = s_char+;
+      encoding_prefix       = ( "u8" | 'u' | "L" );
       string_literal        = encoding_prefix? "\"" s_char_sequence? "\"";
 
       "_Alignas"        { token = yy::parser::token::ALIGNAS; break; }
@@ -204,9 +207,7 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
       "~"   { token = yy::parser::token::TILDE; break; }
 
       identifier            { token = check_type(yypmatch[0], yypmatch[1], lval); break; }
-      decimal_constant      { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
-      octal_constant        { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
-      hexadecimal_constant  { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
+      integer_constant      { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
       floating_constant     { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::FLOATING_CONSTANT; break; }
       character_constant    { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::CHARACTER_CONSTANT; break; }
       string_literal        { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::STRING_LITERAL; break; }
