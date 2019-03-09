@@ -19,50 +19,87 @@ std::optional<std::string> filename;
 
 auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
     -> int {
+  using YYCTYPE = std::string::value_type;
+  using iterator = std::string::const_iterator;
+
   static std::string line;
   static size_t lineno = 0;
   yy::parser::token::yytokentype token;
 
+#define YYLIMIT line.cend()
 #define YYFILL                                                                 \
-  {                                                                            \
-    if (YYCURSOR == line.cend()) {                                             \
-      do {                                                                     \
-        if (!std::getline(*input, line)) {                                     \
-          return yy::parser::token::END_OF_FILE;                               \
-        }                                                                      \
-        ++lineno;                                                              \
-      } while (line.empty());                                                  \
-    } else {                                                                   \
-      line = std::string(YYCURSOR, line.cend());                               \
-    }                                                                          \
+  if (YYCURSOR == line.cend()) {                                               \
+    do {                                                                       \
+      if (!std::getline(*input, line)) {                                       \
+        return yy::parser::token::END_OF_FILE;                                 \
+      }                                                                        \
+      ++lineno;                                                                \
+    } while (line.empty());                                                    \
     YYCURSOR = line.cbegin();                                                  \
   }
 
   // clang-format off
   /*!re2c
     re2c:flags:posix-captures = 1;
-    re2c:define:YYCTYPE = char;
-    re2c:define:YYLIMIT = line.cend();
+    re2c:flags:input = custom;
     re2c:define:YYFILL:naked = 1;
   */
-  /*!stags:re2c format = 'std::string::const_iterator @@;'; */
+  /*!stags:re2c format = 'iterator @@;'; */
   /*!maxnmatch:re2c*/
   // clang-format on
 
   static auto YYCURSOR = line.cbegin();
-  std::array<decltype(YYCURSOR), YYMAXNMATCH * 2> yypmatch;
+  std::array<iterator, YYMAXNMATCH * 2> yypmatch;
 
-  std::string::const_iterator YYMARKER;
+  iterator YYMARKER;
   size_t yynmatch;
+
+  auto const YYPEEK = []() { return *YYCURSOR; };
+  auto const YYSKIP = []() { ++YYCURSOR; };
+  auto const YYBACKUP = [&]() { YYMARKER = YYCURSOR; };
+  auto const YYRESTORE = [&]() { YYCURSOR = YYMARKER; };
+  auto const YYLESSTHAN = [](auto const &n) {
+    return std::distance(YYCURSOR, YYLIMIT) < n;
+  };
+  auto const YYSTAGP = [](auto &t) { t = YYCURSOR; };
+  auto const YYSTAGN = [](auto &t) { t = line.cend(); };
 
   while (true) {
     // clang-format off
     /*!re2c
-      identifier            = [_a-zA-Z][_0-9a-zA-Z]*;
-      decimal_constant      = [1-9][0-9]*;
-      octal_constant        = "0" [0-7]*;
-      hexadecimal_constant  = '0x' [0-9a-zA-Z]+;
-      string_literal        = "\"" [^"]* "\"";
+      digit                 = [0-9];
+      nonzero_digit         = [1-9];
+      octal_digit           = [0-7];
+      hexadecimal_digit     = [0-9a-fA-F];
+      nondigit              = [_a-zA-Z];
+      hexadecimal_prefix    = '0x';
+      encoding_prefix       = ( "u8" | 'u' | "L" );
+
+      hex_quad              = hexadecimal_digit{4};
+      universal_character_name  = ( "\\u" hex_quad | "\\U" hex_quad hex_quad );
+
+      simple_escape_sequence  = ( "\\'" | "\\\"" | "\\?" | "\\\\" | "\\a" | "\\b" | "\\f" | "\\n" | "\\r" | "\\t" | "\\v" );
+      octal_escape_sequence   = ( "\\" octal_digit{1,3} );
+      hexadecimal_escape_sequence = ( "\\x" hexadecimal_digit+ );
+      escape_sequence       = ( simple_escape_sequence | octal_escape_sequence | hexadecimal_escape_sequence | universal_character_name );
+
+      identifier_nondigit   = ( nondigit | universal_character_name );
+      identifier            = identifier_nondigit ( identifier_nondigit | digit )*;
+
+      // TODO integer-suffix
+      decimal_constant      = nonzero_digit digit*;
+      octal_constant        = "0" octal_digit*;
+      hexadecimal_constant  = hexadecimal_prefix hexadecimal_digit+;
+
+      // TODO floating-constant
+
+      c_char                = ( [^'\\] | escape_sequence );
+      c_char_sequence       = c_char+;
+      character_constant    = ( "'" | "L'" | 'u\'' ) c_char_sequence "'";
+
+      s_char                = ( [^"\\] | escape_sequence );
+      s_char_sequence       = s_char+;
+      string_literal        = encoding_prefix? "\"" s_char_sequence? "\"";
 
       "_Alignas"        { token = yy::parser::token::ALIGNAS; break; }
       "_Alignof"        { token = yy::parser::token::ALIGNOF; break; }
@@ -160,6 +197,7 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
       decimal_constant      { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
       octal_constant        { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
       hexadecimal_constant  { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
+      character_constant    { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::CHARACTER_CONSTANT; break; }
       string_literal        { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::STRING_LITERAL; break; }
 
       [ \t\v\f]+  { continue; }
