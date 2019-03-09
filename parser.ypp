@@ -1,6 +1,14 @@
 %code {
 /* Unqualified "%code" block which will be emitted into .cpp */
 static auto add_typedef_names(ptree const&) -> void;
+
+class add_nodes {
+  ptree& target;
+public:
+  add_nodes(ptree &);
+  auto operator()(std::string const&, ptree const&) -> add_nodes&;
+  auto operator()(std::string const&, std::string const&) -> add_nodes&;
+};
 }
 
 %code requires {
@@ -129,908 +137,446 @@ using ptree = boost::property_tree::ptree;
 
 constant
 : INTEGER_CONSTANT
-  {
-    $$.add("integer-constant", $1);
-  }
+  { add_nodes($$)("integer-constant", $1); }
 | FLOATING_CONSTANT
-  {
-    $$.add("floating-constant", $1);
-  }
+  { add_nodes($$)("floating-constant", $1); }
 | ENUMERATION_CONSTANT
-  {
-    $$.add("enumeration-constant", $1);
-  }
+  { add_nodes($$)("enumeration-constant", $1); }
 | CHARACTER_CONSTANT
-  {
-    $$.add("character-constant", $1);
-  }
+  { add_nodes($$)("character-constant", $1); }
 ;
 
 enumeration-constant
 : IDENTIFIER
-  {
-    $$.add("identifier", $1);
-    add_enumeration_constant(std::move($1));
-  }
+  { add_nodes($$)("identifier", $1); add_enumeration_constant(std::move($1)); }
 ;
 
 primary-expression
 : IDENTIFIER
-  {
-    $$.add("identifier", $1);
-  }
+  { add_nodes($$)("identifier", $1); }
 | constant
-  {
-    $$.add_child("constant", $1);
-  }
+  { add_nodes($$)("constant", $1); }
 | STRING_LITERAL
-  {
-    $$.add("string-literal", $1);
-  }
+  { add_nodes($$)("string-literal", $1); }
 | LPAR expression RPAR
-  {
-    $$.add("punctuator", "(");
-    $$.add_child("expression", $2);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("punctuator", "(")("expression", $2)("punctuator", ")"); }
 | generic-selection
-  {
-    $$.add_child("generic-selection", $1);
-  }
+  { add_nodes($$)("generic-selection", $1); }
 ;
 
 generic-selection
 : GENERIC LPAR assignment-expression COMMA generic-assoc-list RPAR
-  {
-    $$.add("keyword", "_Generic");
-    $$.add("punctuator", "(");
-    $$.add_child("assignment-expression", $3);
-    $$.add("punctuator", ",");
-    $$.add_child("generic-assoc-list", $5);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("keyword", "_Generic")("punctuator", "(")("assignment-expression", $3)("punctuator", ",")("generic-assoc-list", $5)("punctuator", ")"); }
 ;
 
 generic-assoc-list
 : generic-association
-  {
-    $$.add_child("generic-association", $1);
-  }
+  { add_nodes($$)("generic-association", $1); }
 | generic-assoc-list COMMA generic-association
-  {
-    $$.add_child("generic-assoc-list", $1);
-    $$.add("punctuator", ",");
-    $$.add_child("generic-association", $3);
-  }
+  { add_nodes($$)("generic-assoc-list", $1)("punctuator", ",")("generic-association", $3); }
 ;
 
 generic-association
 : type-name COLON assignment-expression
-  {
-    $$.add_child("type-name", $1);
-    $$.add("punctuator", ":");
-    $$.add_child("assignment-expression", $3);
-  }
+  { add_nodes($$)("type-name", $1)("punctuator", ":")("assignment-expression", $3); }
 | DEFAULT COLON assignment-expression
-  {
-    $$.add("keyword", "default");
-    $$.add("punctuator", ":");
-    $$.add_child("assignment-expression", $3);
-  }
+  { add_nodes($$)("keyword", "default")("punctuator", ":")("assignment-expression", $3); }
 ;
 
 postfix-expression
 : primary-expression
-  {
-    $$.add_child("primary-expression", $1);
-  }
+  { add_nodes($$)("primary-expression", $1); }
 | postfix-expression LSQB expression RSQB
-  {
-    $$.add_child("postfix-expression", $1);
-    $$.add("punctuator", "[");
-    $$.add_child("expression", $3);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("postfix-expression", $1)("punctuator", "[")("expression", $3)("punctuator", "]"); }
 | postfix-expression LPAR RPAR
-  {
-    $$.add_child("postfix-expression", $1);
-    $$.add("punctuator", "(");
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("postfix-expression", $1)("punctuator", "(")("punctuator", ")"); }
 | postfix-expression LPAR argument-expression-list RPAR
-  {
-    $$.add_child("postfix-expression", $1);
-    $$.add("punctuator", "(");
-    $$.add_child("argument-expression-list", $3);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("postfix-expression", $1)("punctuator", "(")("argument-expression-list", $3)("punctuator", ")"); }
 | postfix-expression PERIOD IDENTIFIER
-  {
-    $$.add_child("postfix-expression", $1);
-    $$.add("punctuator", ".");
-    $$.add("identifier", $3);
-  }
+  { add_nodes($$)("postfix-expression", $1)("punctuator", ".")("identifier", $3); }
 | postfix-expression RARR IDENTIFIER
-  {
-    $$.add_child("postfix-expression", $1);
-    $$.add("punctuator", "->");
-    $$.add("identifier", $3);
-  }
+  { add_nodes($$)("postfix-expression", $1)("punctuator", "->")("identifier", $3); }
 | postfix-expression PLUS_PLUS
-  {
-    $$.add_child("postfix-expression", $1);
-    $$.add("punctuator", "++");
-  }
+  { add_nodes($$)("postfix-expression", $1)("punctuator", "++"); }
 | postfix-expression MINUS_MINUS
-  {
-    $$.add_child("postfix-expression", $1);
-    $$.add("punctuator", "--");
-  }
+  { add_nodes($$)("postfix-expression", $1)("punctuator", "--"); }
 | LPAR type-name RPAR LCUB initializer-list RCUB
-  {
-    $$.add("punctuator", "(");
-    $$.add_child("type-name", $2);
-    $$.add("punctuator", ")");
-    $$.add("punctuator", "{");
-    $$.add_child("initializer-list", $5);
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("punctuator", "(")("type-name", $2)("punctuator", ")")("punctuator", "{")("initializer-list", $5)("punctuator", "}"); }
 | LPAR type-name RPAR LCUB initializer-list COMMA RCUB
-  {
-    $$.add("punctuator", "(");
-    $$.add_child("type-name", $2);
-    $$.add("punctuator", ")");
-    $$.add("punctuator", "{");
-    $$.add_child("initializer-list", $5);
-    $$.add("punctuator", ",");
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("punctuator", "(")("type-name", $2)("punctuator", ")")("punctuator", "{")("initializer-list", $5)("punctuator", ",")("punctuator", "}"); }
 ;
 
 argument-expression-list
 : assignment-expression
-  {
-    $$.add_child("assignment-expression", $1);
-  }
+  { add_nodes($$)("assignment-expression", $1); }
 | argument-expression-list COMMA assignment-expression
-  {
-    $$.add_child("argument-expression-list", $1);
-    $$.add("punctuator", ",");
-    $$.add_child("assignment-expression", $3);
-  }
+  { add_nodes($$)("argument-expression-list", $1)("punctuator", ",")("assignment-expression", $3); }
 ;
 
 unary-expression
 : postfix-expression
-  {
-    $$.add_child("postfix-expression", $1);
-  }
+  { add_nodes($$)("postfix-expression", $1); }
 | PLUS_PLUS unary-expression
-  {
-    $$.add("punctuator", "++");
-    $$.add_child("unary-expression", $2);
-  }
+  { add_nodes($$)("punctuator", "++")("unary-expression", $2); }
 | MINUS_MINUS unary-expression
-  {
-    $$.add("punctuator", "--");
-    $$.add_child("unary-expression", $2);
-  }
+  { add_nodes($$)("punctuator", "--")("unary-expression", $2); }
 | unary-operator cast-expression
-  {
-    $$.add_child("unary-operator", $1);
-    $$.add_child("cast-expression", $2);
-  }
+  { add_nodes($$)("unary-operator", $1)("cast-expression", $2); }
 | SIZEOF unary-expression
-  {
-    $$.add("keyword", "sizeof");
-    $$.add_child("unary-expression", $2);
-  }
+  { add_nodes($$)("keyword", "sizeof")("unary-expression", $2); }
 | SIZEOF LPAR type-name RPAR
-  {
-    $$.add("keyword", "sizeof");
-    $$.add("punctuator", "(");
-    $$.add_child("type-name", $3);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("keyword", "sizeof")("punctuator", "(")("type-name", $3)("punctuator", ")"); }
 | ALIGNOF LPAR type-name RPAR
-  {
-    $$.add("keyword", "_Alignof");
-    $$.add("punctuator", "(");
-    $$.add_child("type-name", $3);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("keyword", "_Alignof")("punctuator", "(")("type-name", $3)("punctuator", ")"); }
 ;
 
 unary-operator
 : AMP
-  {
-    $$.add("punctuator", "&");
-  }
+  { add_nodes($$)("punctuator", "&"); }
 | AST
-  {
-    $$.add("punctuator", "*");
-  }
+  { add_nodes($$)("punctuator", "*"); }
 | PLUS
-  {
-    $$.add("punctuator", "+");
-  }
+  { add_nodes($$)("punctuator", "+"); }
 | MINUS
-  {
-    $$.add("punctuator", "-");
-  }
+  { add_nodes($$)("punctuator", "-"); }
 | TILDE
-  {
-    $$.add("punctuator", "~");
-  }
+  { add_nodes($$)("punctuator", "~"); }
 | EXCL
-  {
-    $$.add("punctuator", "!");
-  }
+  { add_nodes($$)("punctuator", "!"); }
 ;
 
 cast-expression
 : unary-expression
-  {
-    $$.add_child("unary-expression", $1);
-  }
+  { add_nodes($$)("unary-expression", $1); }
 | LPAR type-name RPAR cast-expression
-  {
-    $$.add("punctuator", "(");
-    $$.add_child("type-name", $2);
-    $$.add("punctuator", ")");
-    $$.add_child("cast-expression", $4);
-  }
+  { add_nodes($$)("punctuator", "(")("type-name", $2)("punctuator", ")")("cast-expression", $4); }
 ;
 
 multiplicative-expression
 : cast-expression
-  {
-    $$.add_child("cast-expression", $1);
-  }
+  { add_nodes($$)("cast-expression", $1); }
 | multiplicative-expression AST cast-expression
-  {
-    $$.add_child("multiplicative-expression", $1);
-    $$.add("punctuator", "*");
-    $$.add_child("cast-expression", $3);
-  }
+  { add_nodes($$)("multiplicative-expression", $1)("punctuator", "*")("cast-expression", $3); }
 | multiplicative-expression SOL cast-expression
-  {
-    $$.add_child("multiplicative-expression", $1);
-    $$.add("punctuator", "/");
-    $$.add_child("cast-expression", $3);
-  }
+  { add_nodes($$)("multiplicative-expression", $1)("punctuator", "/")("cast-expression", $3); }
 | multiplicative-expression PERCNT cast-expression
-  {
-    $$.add_child("multiplicative-expression", $1);
-    $$.add("punctuator", "%");
-    $$.add_child("cast-expression", $3);
-  }
+  { add_nodes($$)("multiplicative-expression", $1)("punctuator", "%")("cast-expression", $3); }
 ;
 
 additive-expression
 : multiplicative-expression
-  {
-    $$.add_child("multiplicative-expression", $1);
-  }
+  { add_nodes($$)("multiplicative-expression", $1); }
 | additive-expression PLUS multiplicative-expression
-  {
-    $$.add_child("additive-expression", $1);
-    $$.add("punctuator", "+");
-    $$.add_child("multiplicative-expression", $3);
-  }
+  { add_nodes($$)("additive-expression", $1)("punctuator", "+")("multiplicative-expression", $3); }
 | additive-expression MINUS multiplicative-expression
-  {
-    $$.add_child("additive-expression", $1);
-    $$.add("punctuator", "-");
-    $$.add_child("multiplicative-expression", $3);
-  }
+  { add_nodes($$)("additive-expression", $1)("punctuator", "-")("multiplicative-expression", $3); }
 ;
 
 shift-expression
 : additive-expression
-  {
-    $$.add_child("additive-expression", $1);
-  }
+  { add_nodes($$)("additive-expression", $1); }
 | shift-expression LAQUO additive-expression
-  {
-    $$.add_child("shift-expression", $1);
-    $$.add("punctuator", "<<");
-    $$.add_child("additive-expression", $3);
-  }
+  { add_nodes($$)("shift-expression", $1)("punctuator", "<<")("additive-expression", $3); }
 | shift-expression RAQUO additive-expression
-  {
-    $$.add_child("shift-expression", $1);
-    $$.add("punctuator", ">>");
-    $$.add_child("additive-expression", $3);
-  }
+  { add_nodes($$)("shift-expression", $1)("punctuator", ">>")("additive-expression", $3); }
 ;
 
 relational-expression
 : shift-expression
-  {
-    $$.add_child("shift-expression", $1);
-  }
+  { add_nodes($$)("shift-expression", $1); }
 | relational-expression LT shift-expression
-  {
-    $$.add_child("relational-expression", $1);
-    $$.add("punctuator", "<");
-    $$.add_child("shift-expression", $3);
-  }
+  { add_nodes($$)("relational-expression", $1)("punctuator", "<")("shift-expression", $3); }
 | relational-expression GT shift-expression
-  {
-    $$.add_child("relational-expression", $1);
-    $$.add("punctuator", ">");
-    $$.add_child("shift-expression", $3);
-  }
+  { add_nodes($$)("relational-expression", $1)("punctuator", ">")("shift-expression", $3); }
 | relational-expression LT_EQ shift-expression
-  {
-    $$.add_child("relational-expression", $1);
-    $$.add("punctuator", "<=");
-    $$.add_child("shift-expression", $3);
-  }
+  { add_nodes($$)("relational-expression", $1)("punctuator", "<=")("shift-expression", $3); }
 | relational-expression GT_EQ shift-expression
-  {
-    $$.add_child("relational-expression", $1);
-    $$.add("punctuator", ">=");
-    $$.add_child("shift-expression", $3);
-  }
+  { add_nodes($$)("relational-expression", $1)("punctuator", ">=")("shift-expression", $3); }
 ;
 
 equality-expression
 : relational-expression
-  {
-    $$.add_child("relational-expression", $1);
-  }
+  { add_nodes($$)("relational-expression", $1); }
 | equality-expression EQ_EQ relational-expression
-  {
-    $$.add_child("equality-expression", $1);
-    $$.add("punctuator", "==");
-    $$.add_child("relational-expression", $3);
-  }
+  { add_nodes($$)("equality-expression", $1)("punctuator", "==")("relational-expression", $3); }
 | equality-expression EXCL_EQ relational-expression
-  {
-    $$.add_child("equality-expression", $1);
-    $$.add("punctuator", "!=");
-    $$.add_child("relational-expression", $3);
-  }
+  { add_nodes($$)("equality-expression", $1)("punctuator", "!=")("relational-expression", $3); }
 ;
 
 AND-expression
 : equality-expression
-  {
-    $$.add_child("equality-expression", $1);
-  }
+  { add_nodes($$)("equality-expression", $1); }
 | AND-expression AMP equality-expression
-  {
-    $$.add_child("AND-expression", $1);
-    $$.add("punctuator", "&");
-    $$.add_child("equality-expression", $3);
-  }
+  { add_nodes($$)("AND-expression", $1)("punctuator", "&")("equality-expression", $3); }
 ;
 
 exclusive-OR-expression
 : AND-expression
-  {
-    $$.add_child("AND-expression", $1);
-  }
+  { add_nodes($$)("AND-expression", $1); }
 | exclusive-OR-expression HAT AND-expression
-  {
-    $$.add_child("exclusive-OR-expression", $1);
-    $$.add("punctuator", "^");
-    $$.add_child("AND-expression", $3);
-  }
+  { add_nodes($$)("exclusive-OR-expression", $1)("punctuator", "^")("AND-expression", $3); }
 ;
 
 inclusive-OR-expression
 : exclusive-OR-expression
-  {
-    $$.add_child("exclusive-OR-expression", $1);
-  }
+  { add_nodes($$)("exclusive-OR-expression", $1); }
 | inclusive-OR-expression VERT exclusive-OR-expression
-  {
-    $$.add_child("inclusive-OR-expression", $1);
-    $$.add("punctuator", "|");
-    $$.add_child("exclusive-OR-expression", $3);
-  }
+  { add_nodes($$)("inclusive-OR-expression", $1)("punctuator", "|")("exclusive-OR-expression", $3); }
 ;
 
 logical-AND-expression
 : inclusive-OR-expression
-  {
-    $$.add_child("inclusive-OR-expression", $1);
-  }
+  { add_nodes($$)("inclusive-OR-expression", $1); }
 | logical-AND-expression AMP_AMP inclusive-OR-expression
-  {
-    $$.add_child("logical-AND-expression", $1);
-    $$.add("punctuator", "&&");
-    $$.add_child("inclusive-OR-expression", $3);
-  }
+  { add_nodes($$)("logical-AND-expression", $1)("punctuator", "&&")("inclusive-OR-expression", $3); }
 ;
 
 logical-OR-expression
 : logical-AND-expression
-  {
-    $$.add_child("logical-AND-expression", $1);
-  }
+  { add_nodes($$)("logical-AND-expression", $1); }
 | logical-OR-expression VERT_VERT logical-AND-expression
-  {
-    $$.add_child("logical-OR-expression", $1);
-    $$.add("punctuator", "||");
-    $$.add_child("logical-AND-expression", $3);
-  }
+  { add_nodes($$)("logical-OR-expression", $1)("punctuator", "||")("logical-AND-expression", $3); }
 ;
 
 conditional-expression
 : logical-OR-expression
-  {
-    $$.add_child("logical-OR-expression", $1);
-  }
+  { add_nodes($$)("logical-OR-expression", $1); }
 | logical-OR-expression QUEST expression COLON conditional-expression
-  {
-    $$.add_child("logical-OR-expression", $1);
-    $$.add("punctuator", "?");
-    $$.add_child("expression", $3);
-    $$.add("punctuator", ":");
-    $$.add_child("conditional-expression", $5);
-  }
+  { add_nodes($$)("logical-OR-expression", $1)("punctuator", "?")("expression", $3)("punctuator", ":")("conditional-expression", $5); }
 ;
 
 assignment-expression
 : conditional-expression
-  {
-    $$.add_child("conditional-expression", $1);
-  }
+  { add_nodes($$)("conditional-expression", $1); }
 | unary-expression assignment-operator assignment-expression
-  {
-    $$.add_child("unary-expression", $1);
-    $$.add_child("assignment-operator", $2);
-    $$.add_child("assignment-expression", $3);
-  }
+  { add_nodes($$)("unary-expression", $1)("assignment-operator", $2)("assignment-expression", $3); }
 ;
 
 assignment-operator
 : EQ
-  {
-    $$.add("punctuator", "=");
-  }
+  { add_nodes($$)("punctuator", "="); }
 | AST_EQ
-  {
-    $$.add("punctuator", "*=");
-  }
+  { add_nodes($$)("punctuator", "*="); }
 | SOL_EQ
-  {
-    $$.add("punctuator", "/=");
-  }
+  { add_nodes($$)("punctuator", "/="); }
 | PERCNT_EQ
-  {
-    $$.add("punctuator", "%=");
-  }
+  { add_nodes($$)("punctuator", "%="); }
 | PLUS_EQ
-  {
-    $$.add("punctuator", "+=");
-  }
+  { add_nodes($$)("punctuator", "+="); }
 | MINUS_EQ
-  {
-    $$.add("punctuator", "-=");
-  }
+  { add_nodes($$)("punctuator", "-="); }
 | LAQUO_EQ
-  {
-    $$.add("punctuator", "<<=");
-  }
+  { add_nodes($$)("punctuator", "<<="); }
 | RAQUO_EQ
-  {
-    $$.add("punctuator", ">>=");
-  }
+  { add_nodes($$)("punctuator", ">>="); }
 | AMP_EQ
-  {
-    $$.add("punctuator", "&=");
-  }
+  { add_nodes($$)("punctuator", "&="); }
 | HAT_EQ
-  {
-    $$.add("punctuator", "^=");
-  }
+  { add_nodes($$)("punctuator", "^="); }
 | VERT_EQ
-  {
-    $$.add("punctuator", "|=");
-  }
+  { add_nodes($$)("punctuator", "|="); }
 ;
 
 expression
 : assignment-expression
-  {
-    $$.add_child("assignment-expression", $1);
-  }
+  { add_nodes($$)("assignment-expression", $1); }
 | expression COMMA assignment-expression
-  {
-    $$.add_child("expression", $1);
-    $$.add("punctuator", ",");
-    $$.add_child("assignment-expression", $3);
-  }
+  { add_nodes($$)("expression", $1)("punctuator", ",")("assignment-expression", $3); }
 ;
 
 constant-expression
 : conditional-expression
-  {
-    $$.add_child("conditional-expression", $1);
-  }
+  { add_nodes($$)("conditional-expression", $1); }
 ;
 
 declaration
 : declaration-specifiers SEMI
-  {
-    $$.add_child("declaration-specifiers", $1);
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("declaration-specifiers", $1)("punctuator", ";"); }
 | declaration-specifiers init-declarator-list SEMI
   {
-    $$.add_child("declaration-specifiers", $1);
-    $$.add_child("init-declarator-list", $2);
-    $$.add("punctuator", ";");
-
+    add_nodes($$)("declaration-specifiers", $1)("init-declarator-list", $2)("punctuator", ";");
     // Do the lexer hack
     if ($1.get<std::string>("storage-class-specifier.keyword") == "typedef") {
       add_typedef_names($2);
     }
   }
 | static-assert-declaration
-  {
-    $$.add_child("static-assert-declaration", $1);
-  }
+  { add_nodes($$)("static-assert-declaration", $1); }
 ;
 
 declaration-specifiers
 : storage-class-specifier
-  {
-    $$.add_child("storage-class-specifier", $1);
-  }
+  { add_nodes($$)("storage-class-specifier", $1); }
 | storage-class-specifier declaration-specifiers
-  {
-    $$.add_child("storage-class-specifier", $1);
-    $$.add_child("declaration-specifiers", $2);
-  }
+  { add_nodes($$)("storage-class-specifier", $1)("declaration-specifiers", $2); }
 | type-specifier
-  {
-    $$.add_child("type-specifier", $1);
-  }
+  { add_nodes($$)("type-specifier", $1); }
 | type-specifier declaration-specifiers
-  {
-    $$.add_child("type-specifier", $1);
-    $$.add_child("declaration-specifiers", $2);
-  }
+  { add_nodes($$)("type-specifier", $1)("declaration-specifiers", $2); }
 | type-qualifier
-  {
-    $$.add_child("type-qualifier", $1);
-  }
+  { add_nodes($$)("type-qualifier", $1); }
 | type-qualifier declaration-specifiers
-  {
-    $$.add_child("type-qualifier", $1);
-    $$.add_child("declaration-specifiers", $2);
-  }
+  { add_nodes($$)("type-qualifier", $1)("declaration-specifiers", $2); }
 | function-specifier
-  {
-    $$.add_child("function-specifier", $1);
-  }
+  { add_nodes($$)("function-specifier", $1); }
 | function-specifier declaration-specifiers
-  {
-    $$.add_child("function-specifier", $1);
-    $$.add_child("declaration-specifiers", $2);
-  }
+  { add_nodes($$)("function-specifier", $1)("declaration-specifiers", $2); }
 | alignment-specifier
-  {
-    $$.add_child("alignment-specifier", $1);
-  }
+  { add_nodes($$)("alignment-specifier", $1); }
 | alignment-specifier declaration-specifiers
-  {
-    $$.add_child("alignment-specifier", $1);
-    $$.add_child("declaration-specifiers", $2);
-  }
+  { add_nodes($$)("alignment-specifier", $1)("declaration-specifiers", $2); }
 ;
 
 init-declarator-list
 : init-declarator
-  {
-    $$.add_child("init-declarator", $1);
-  }
+  { add_nodes($$)("init-declarator", $1); }
 | init-declarator-list COMMA init-declarator
-  {
-    $$.add_child("init-declarator-list", $1);
-    $$.add("punctuator", ",");
-    $$.add_child("init-declarator", $3);
-  }
+  { add_nodes($$)("init-declarator-list", $1)("punctuator", ",")("init-declarator", $3); }
 ;
 
 init-declarator
 : declarator
-  {
-    $$.add_child("declarator", $1);
-  }
+  { add_nodes($$)("declarator", $1); }
 | declarator EQ initializer
-  {
-    $$.add_child("declarator", $1);
-    $$.add("punctuator", "=");
-    $$.add_child("initializer", $3);
-  }
+  { add_nodes($$)("declarator", $1)("punctuator", "=")("initializer", $3); }
 ;
 
 storage-class-specifier
 : TYPEDEF
-  {
-    $$.add("keyword", "typedef");
-  }
+  { add_nodes($$)("keyword", "typedef"); }
 | EXTERN
-  {
-    $$.add("keyword", "extern");
-  }
+  { add_nodes($$)("keyword", "extern"); }
 | STATIC
-  {
-    $$.add("keyword", "static");
-  }
+  { add_nodes($$)("keyword", "static"); }
 | THREAD_LOCAL
-  {
-    $$.add("keyword", "_Thread_local");
-  }
+  { add_nodes($$)("keyword", "_Thread_local"); }
 | AUTO
-  {
-    $$.add("keyword", "auto");
-  }
+  { add_nodes($$)("keyword", "auto"); }
 | REGISTER
-  {
-    $$.add("keyword", "register");
-  }
+  { add_nodes($$)("keyword", "register"); }
 ;
 
 type-specifier
 : VOID
-  {
-    $$.add("keyword", "void");
-  }
+  { add_nodes($$)("keyword", "void"); }
 | CHAR
-  {
-    $$.add("keyword", "char");
-  }
+  { add_nodes($$)("keyword", "char"); }
 | SHORT
-  {
-    $$.add("keyword", "short");
-  }
+  { add_nodes($$)("keyword", "short"); }
 | INT
-  {
-    $$.add("keyword", "int");
-  }
+  { add_nodes($$)("keyword", "int"); }
 | LONG
-  {
-    $$.add("keyword", "long");
-  }
+  { add_nodes($$)("keyword", "long"); }
 | FLOAT
-  {
-    $$.add("keyword", "float");
-  }
+  { add_nodes($$)("keyword", "float"); }
 | DOUBLE
-  {
-    $$.add("keyword", "double");
-  }
+  { add_nodes($$)("keyword", "double"); }
 | SIGNED
-  {
-    $$.add("keyword", "signed");
-  }
+  { add_nodes($$)("keyword", "signed"); }
 | UNSIGNED
-  {
-    $$.add("keyword", "unsigned");
-  }
+  { add_nodes($$)("keyword", "unsigned"); }
 | BOOL
-  {
-    $$.add("keyword", "_Bool");
-  }
+  { add_nodes($$)("keyword", "_Bool"); }
 | COMPLEX
-  {
-    $$.add("keyword", "_Complex");
-  }
+  { add_nodes($$)("keyword", "_Complex"); }
 | atomic-type-specifier
-  {
-    $$.add_child("atomic-type-specifier", $1);
-  }
+  { add_nodes($$)("atomic-type-specifier", $1); }
 | struct-or-union-specifier
-  {
-    $$.add_child("struct-or-union-specifier", $1);
-  }
+  { add_nodes($$)("struct-or-union-specifier", $1); }
 | enum-specifier
-  {
-    $$.add_child("enum-specifier", $1);
-  }
+  { add_nodes($$)("enum-specifier", $1); }
 | TYPEDEF_NAME
-  {
-    $$.add("typedef-name", $1);
-  }
+  { add_nodes($$)("typedef-name", $1); }
 ;
 
 struct-or-union-specifier
 : struct-or-union LCUB struct-declaration-list RCUB
-  {
-    $$.add_child("struct-or-union", $1);
-    $$.add("punctuator", "{");
-    $$.add_child("struct-declaration-list", $3);
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("struct-or-union", $1)("punctuator", "{")("struct-declaration-list", $3)("punctuator", "}"); }
 | struct-or-union IDENTIFIER LCUB struct-declaration-list RCUB
-  {
-    $$.add_child("struct-or-union", $1);
-    $$.add("identifier", $2);
-    $$.add("punctuator", "{");
-    $$.add_child("struct-declaration-list", $4);
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("struct-or-union", $1)("identifier", $2)("punctuator", "{")("struct-declaration-list", $4)("punctuator", "}"); }
 | struct-or-union IDENTIFIER
-  {
-    $$.add_child("struct-or-union", $1);
-    $$.add("identifier", $2);
-  }
+  { add_nodes($$)("struct-or-union", $1)("identifier", $2); }
 ;
 
 struct-or-union
 : STRUCT
-  {
-    $$.add("keyword", "struct");
-  }
+  { add_nodes($$)("keyword", "struct"); }
 | UNION
-  {
-    $$.add("keyword", "union");
-  }
+  { add_nodes($$)("keyword", "union"); }
 ;
 
 struct-declaration-list
 : struct-declaration
-  {
-    $$.add_child("struct-declaration", $1);
-  }
+  { add_nodes($$)("struct-declaration", $1); }
 | struct-declaration-list struct-declaration
-  {
-    $$.add_child("struct-declaration-list", $1);
-    $$.add_child("struct-declaration", $2);
-  }
+  { add_nodes($$)("struct-declaration-list", $1)("struct-declaration", $2); }
 ;
 
 struct-declaration
 : specifier-qualifier-list SEMI
-  {
-    $$.add_child("specifier-qualifier-list", $1);
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("specifier-qualifier-list", $1)("punctuator", ";"); }
 | specifier-qualifier-list struct-declarator-list SEMI
-  {
-    $$.add_child("specifier-qualifier-list", $1);
-    $$.add_child("struct-declarator-list", $2);
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("specifier-qualifier-list", $1)("struct-declarator-list", $2)("punctuator", ";"); }
 | static-assert-declaration
-  {
-    $$.add_child("static-assert-declaration", $1);
-  }
+  { add_nodes($$)("static-assert-declaration", $1); }
 ;
 
 specifier-qualifier-list
 : type-specifier
-  {
-    $$.add_child("type-specifier", $1);
-  }
+  { add_nodes($$)("type-specifier", $1); }
 | type-specifier specifier-qualifier-list
-  {
-    $$.add_child("type-specifier", $1);
-    $$.add_child("specifier-qualifier-list", $2);
-  }
+  { add_nodes($$)("type-specifier", $1)("specifier-qualifier-list", $2); }
 | type-qualifier
-  {
-    $$.add_child("type-qualifier", $1);
-  }
+  { add_nodes($$)("type-qualifier", $1); }
 | type-qualifier specifier-qualifier-list
-  {
-    $$.add_child("type-qualifier", $1);
-    $$.add_child("specifier-qualifier-list", $2);
-  }
+  { add_nodes($$)("type-qualifier", $1)("specifier-qualifier-list", $2); }
 | alignment-specifier
-  {
-    $$.add_child("alignment-specifier", $1);
-  }
+  { add_nodes($$)("alignment-specifier", $1); }
 | alignment-specifier specifier-qualifier-list
-  {
-    $$.add_child("alignment-specifier", $1);
-    $$.add_child("specifier-qualifier-list", $2);
-  }
+  { add_nodes($$)("alignment-specifier", $1)("specifier-qualifier-list", $2); }
 ;
 
 struct-declarator-list
 : struct-declarator
-  {
-    $$.add_child("struct-declarator", $1);
-  }
+  { add_nodes($$)("struct-declarator", $1); }
 | struct-declarator-list COMMA struct-declarator
-  {
-    $$.add_child("struct-declarator-list", $1);
-    $$.add("punctuator", ",");
-    $$.add_child("struct-declarator", $3);
-  }
+  { add_nodes($$)("struct-declarator-list", $1)("punctuator", ",")("struct-declarator", $3); }
 ;
 
 struct-declarator
 : declarator
-  {
-    $$.add_child("declarator", $1);
-  }
+  { add_nodes($$)("declarator", $1); }
 | COLON constant-expression
-  {
-    $$.add("punctuator", ":");
-    $$.add_child("constant-expression", $2);
-  }
+  { add_nodes($$)("punctuator", ":")("constant-expression", $2); }
 | declarator COLON constant-expression
-  {
-    $$.add_child("declarator", $1);
-    $$.add("punctuator", ":");
-    $$.add_child("constant-expression", $3);
-  }
+  { add_nodes($$)("declarator", $1)("punctuator", ":")("constant-expression", $3); }
 ;
 
 enum-specifier
 : ENUM LCUB enumerator-list RCUB
-  {
-    $$.add("keyword", "enum");
-    $$.add("punctuator", "{");
-    $$.add_child("enumerator-list", $3);
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("keyword", "enum")("punctuator", "{")("enumerator-list", $3)("punctuator", "}"); }
 | ENUM IDENTIFIER LCUB enumerator-list RCUB
-  {
-    $$.add("keyword", "enum");
-    $$.add("identifier", $2);
-    $$.add("punctuator", "{");
-    $$.add_child("enumerator-list", $4);
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("keyword", "enum")("identifier", $2)("punctuator", "{")("enumerator-list", $4)("punctuator", "}"); }
 | ENUM LCUB enumerator-list COMMA RCUB
-  {
-    $$.add("keyword", "enum");
-    $$.add("punctuator", "{");
-    $$.add_child("enumerator-list", $3);
-    $$.add("punctuator", ",");
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("keyword", "enum")("punctuator", "{")("enumerator-list", $3)("punctuator", ",")("punctuator", "}"); }
 | ENUM IDENTIFIER LCUB enumerator-list COMMA RCUB
-  {
-    $$.add("keyword", "enum");
-    $$.add("identifier", $2);
-    $$.add("punctuator", "{");
-    $$.add_child("enumerator-list", $4);
-    $$.add("punctuator", ",");
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("keyword", "enum")("identifier", $2)("punctuator", "{")("enumerator-list", $4)("punctuator", ",")("punctuator", "}"); }
 | ENUM IDENTIFIER
-  {
-    $$.add("keyword", "enum");
-    $$.add("identifier", $2);
-  }
+  { add_nodes($$)("keyword", "enum")("identifier", $2); }
 ;
 
 enumerator-list
 : enumerator
-  {
-    $$.add_child("enumerator", $1);
-  }
+  { add_nodes($$)("enumerator", $1); }
 | enumerator-list COMMA enumerator
-  {
-    $$.add_child("enumerator-list", $1);
-    $$.add("punctuator", ",");
-    $$.add_child("enumerator", $3);
-  }
+  { add_nodes($$)("enumerator-list", $1)("punctuator", ",")("enumerator", $3); }
 ;
 
 enumerator
 : enumeration-constant
-  {
-    $$.add_child("enumeration-constant", $1);
-  }
+  { add_nodes($$)("enumeration-constant", $1); }
 | enumeration-constant EQ constant-expression
-  {
-    $$.add_child("enumeration-constant", $1);
-    $$.add("punctuator", "=");
-    $$.add_child("constant-expression", $3);
-  }
+  { add_nodes($$)("enumeration-constant", $1)("punctuator", "=")("constant-expression", $3); }
 ;
 
 /* NOTE: following two rules make grammar ambiguous.
@@ -1039,888 +585,359 @@ enumerator
 
 atomic-type-specifier
 : ATOMIC LPAR type-name RPAR
-  {
-    $$.add("keyword", "_Atomic");
-    $$.add("punctuator", "(");
-    $$.add_child("type-name", $3);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("keyword", "_Atomic")("punctuator", "(")("type-name", $3)("punctuator", ")"); }
 ;
 
 type-qualifier
 : CONST
-  {
-    $$.add("keyword", "const");
-  }
+  { add_nodes($$)("keyword", "const"); }
 | RESTRICT
-  {
-    $$.add("keyword", "restrict");
-  }
+  { add_nodes($$)("keyword", "restrict"); }
 | VOLATILE
-  {
-    $$.add("keyword", "volatile");
-  }
+  { add_nodes($$)("keyword", "volatile"); }
 | ATOMIC
-  {
-    $$.add("keyword", "_Atomic");
-  }
+  { add_nodes($$)("keyword", "_Atomic"); }
 ;
 
 function-specifier
 : INLINE
-  {
-    $$.add("keyword", "inline");
-  }
+  { add_nodes($$)("keyword", "inline"); }
 | NORETURN
-  {
-    $$.add("keyword", "_Noreturn");
-  }
+  { add_nodes($$)("keyword", "_Noreturn"); }
 ;
 
 alignment-specifier
 : ALIGNAS LPAR type-name RPAR
-  {
-    $$.add("keyword", "_Alignas");
-    $$.add("punctuator", "(");
-    $$.add_child("type-name", $3);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("keyword", "_Alignas")("punctuator", "(")("type-name", $3)("punctuator", ")"); }
 | ALIGNAS LPAR constant-expression RPAR
-  {
-    $$.add("keyword", "_Alignas");
-    $$.add("punctuator", "(");
-    $$.add_child("constant-expression", $3);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("keyword", "_Alignas")("punctuator", "(")("constant-expression", $3)("punctuator", ")"); }
 ;
 
 declarator
 : direct-declarator
-  {
-    $$.add_child("direct-declarator", $1);
-  }
+  { add_nodes($$)("direct-declarator", $1); }
 | pointer direct-declarator
-  {
-    $$.add_child("pointer", $1);
-    $$.add_child("direct-declarator", $2);
-  }
+  { add_nodes($$)("pointer", $1)("direct-declarator", $2); }
 ;
 
 direct-declarator
 : IDENTIFIER
-  {
-    $$.add("identifier", $1);
-  }
+  { add_nodes($$)("identifier", $1); }
 | LPAR declarator RPAR
-  {
-    $$.add("punctuator", "(");
-    $$.add_child("declarator", $2);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("punctuator", "(")("declarator", $2)("punctuator", ")"); }
 | direct-declarator LSQB RSQB
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "[")("punctuator", "]"); }
 | direct-declarator LSQB type-qualifier-list RSQB
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add_child("type-qualifier-list", $3);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "[")("type-qualifier-list", $3)("punctuator", "]"); }
 | direct-declarator LSQB assignment-expression RSQB
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add_child("assignment-expression", $3);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "[")("assignment-expression", $3)("punctuator", "]"); }
 | direct-declarator LSQB type-qualifier-list assignment-expression RSQB
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add_child("type-qualifier-list", $3);
-    $$.add_child("assignment-expression", $4);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "[")("type-qualifier-list", $3)("assignment-expression", $4)("punctuator", "]"); }
 | direct-declarator LSQB STATIC assignment-expression RSQB
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add("keyword", "static");
-    $$.add_child("assignment-expression", $4);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "[")("keyword", "static")("assignment-expression", $4)("punctuator", "]"); }
 | direct-declarator LSQB STATIC type-qualifier-list assignment-expression RSQB
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add("keyword", "static");
-    $$.add_child("type-qualifier-list", $4);
-    $$.add_child("assignment-expression", $5);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "[")("keyword", "static")("type-qualifier-list", $4)("assignment-expression", $5)("punctuator", "]"); }
 | direct-declarator LSQB type-qualifier-list STATIC assignment-expression RSQB
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add_child("type-qualifier-list", $3);
-    $$.add("keyword", "static");
-    $$.add_child("assignment-expression", $5);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "[")("type-qualifier-list", $3)("keyword", "static")("assignment-expression", $5)("punctuator", "]"); }
 | direct-declarator LSQB AST RSQB
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add("punctuator", "*");
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "[")("punctuator", "*")("punctuator", "]"); }
 | direct-declarator LSQB type-qualifier-list AST RSQB
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add_child("type-qualifier-list", $3);
-    $$.add("punctuator", "*");
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "[")("type-qualifier-list", $3)("punctuator", "*")("punctuator", "]"); }
 | direct-declarator LPAR parameter-type-list RPAR
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "(");
-    $$.add_child("parameter-type-list", $3);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "(")("parameter-type-list", $3)("punctuator", ")"); }
 | direct-declarator LPAR RPAR
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "(");
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "(")("punctuator", ")"); }
 | direct-declarator LPAR identifier-list RPAR
-  {
-    $$.add_child("direct-declarator", $1);
-    $$.add("punctuator", "(");
-    $$.add_child("identifier-list", $3);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("direct-declarator", $1)("punctuator", "(")("identifier-list", $3)("punctuator", ")"); }
 ;
 
 pointer
 : AST
-  {
-    $$.add("punctuator", "*");
-  }
+  { add_nodes($$)("punctuator", "*"); }
 | AST type-qualifier-list
-  {
-    $$.add("punctuator", "*");
-    $$.add_child("type-qualifier-list", $2);
-  }
+  { add_nodes($$)("punctuator", "*")("type-qualifier-list", $2); }
 | AST pointer
-  {
-    $$.add("punctuator", "*");
-    $$.add_child("pointer", $2);
-  }
+  { add_nodes($$)("punctuator", "*")("pointer", $2); }
 | AST type-qualifier-list pointer
-  {
-    $$.add("punctuator", "*");
-    $$.add_child("type-qualifier-list", $2);
-    $$.add_child("pointer", $3);
-  }
+  { add_nodes($$)("punctuator", "*")("type-qualifier-list", $2)("pointer", $3); }
 ;
 
 type-qualifier-list
 : type-qualifier
-  {
-    $$.add_child("type-qualifier", $1);
-  }
+  { add_nodes($$)("type-qualifier", $1); }
 | type-qualifier-list type-qualifier
-  {
-    $$.add_child("type-qualifier-list", $1);
-    $$.add_child("type-qualifier", $2);
-  }
+  { add_nodes($$)("type-qualifier-list", $1)("type-qualifier", $2); }
 ;
 
 parameter-type-list
 : parameter-list
-  {
-    $$.add_child("parameter-list", $1);
-  }
+  { add_nodes($$)("parameter-list", $1); }
 | parameter-list COMMA HELLIP
-  {
-    $$.add_child("parameter-list", $1);
-    $$.add("punctuator", ",");
-    $$.add("punctuator", "...");
-  }
+  { add_nodes($$)("parameter-list", $1)("punctuator", ",")("punctuator", "..."); }
 ;
 
 parameter-list
 : parameter-declaration
-  {
-    $$.add_child("parameter-declaration", $1);
-  }
+  { add_nodes($$)("parameter-declaration", $1); }
 | parameter-list COMMA parameter-declaration
-  {
-    $$.add_child("parameter-list", $1);
-    $$.add("punctuator", ",");
-    $$.add_child("parameter-declaration", $3);
-  }
+  { add_nodes($$)("parameter-list", $1)("punctuator", ",")("parameter-declaration", $3); }
 ;
 
 parameter-declaration
 : declaration-specifiers declarator
-  {
-    $$.add_child("declaration-specifiers", $1);
-    $$.add_child("declarator", $2);
-  }
+  { add_nodes($$)("declaration-specifiers", $1)("declarator", $2); }
 | declaration-specifiers
-  {
-    $$.add_child("declaration-specifiers", $1);
-  }
+  { add_nodes($$)("declaration-specifiers", $1); }
 | declaration-specifiers abstract-declarator
-  {
-    $$.add_child("declaration-specifiers", $1);
-    $$.add_child("abstract-declarator", $2);
-  }
+  { add_nodes($$)("declaration-specifiers", $1)("abstract-declarator", $2); }
 ;
 
 identifier-list
 : IDENTIFIER
-  {
-    $$.add("identifier", $1);
-  }
+  { add_nodes($$)("identifier", $1); }
 | identifier-list COMMA IDENTIFIER
-  {
-    $$.add_child("identifier-list", $1);
-    $$.add("punctuator", ",");
-    $$.add("identifier", $3);
-  }
+  { add_nodes($$)("identifier-list", $1)("punctuator", ",")("identifier", $3); }
 ;
 
 type-name
 : specifier-qualifier-list
-  {
-    $$.add_child("specifier-qualifier-list", $1);
-  }
+  { add_nodes($$)("specifier-qualifier-list", $1); }
 | specifier-qualifier-list abstract-declarator
-  {
-    $$.add_child("specifier-qualifier-list", $1);
-    $$.add_child("abstract-declarator", $2);
-  }
+  { add_nodes($$)("specifier-qualifier-list", $1)("abstract-declarator", $2); }
 ;
 
 abstract-declarator
 : pointer
-  {
-    $$.add_child("pointer", $1);
-  }
+  { add_nodes($$)("pointer", $1); }
 | direct-abstract-declarator
-  {
-    $$.add_child("direct-abstract-declarator", $1);
-  }
+  { add_nodes($$)("direct-abstract-declarator", $1); }
 | pointer direct-abstract-declarator
-  {
-    $$.add_child("pointer", $1);
-    $$.add_child("direct-abstract-declarator", $2);
-  }
+  { add_nodes($$)("pointer", $1)("direct-abstract-declarator", $2); }
 ;
 
 direct-abstract-declarator
 : LPAR abstract-declarator RPAR
-  {
-    $$.add("punctuator", "(");
-    $$.add_child("abstract-declarator", $2);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("punctuator", "(")("abstract-declarator", $2)("punctuator", ")"); }
 | LSQB RSQB
-  {
-    $$.add("punctuator", "[");
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("punctuator", "[")("punctuator", "]"); }
 | direct-abstract-declarator LSQB RSQB
-  {
-    $$.add_child("direct-abstract-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-abstract-declarator", $1)("punctuator", "[")("punctuator", "]"); }
 | LSQB type-qualifier-list RSQB
-  {
-    $$.add("punctuator", "[");
-    $$.add_child("type-qualifier-list", $2);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("punctuator", "[")("type-qualifier-list", $2)("punctuator", "]"); }
 | direct-abstract-declarator LSQB type-qualifier-list RSQB
-  {
-    $$.add_child("direct-abstract-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add_child("type-qualifier-list", $3);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-abstract-declarator", $1)("punctuator", "[")("type-qualifier-list", $3)("punctuator", "]"); }
 | LSQB assignment-expression RSQB
-  {
-    $$.add("punctuator", "[");
-    $$.add_child("assignment-expression", $2);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("punctuator", "[")("assignment-expression", $2)("punctuator", "]"); }
 | direct-abstract-declarator LSQB assignment-expression RSQB
-  {
-    $$.add_child("direct-abstract-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add_child("assignment-expression", $3);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-abstract-declarator", $1)("punctuator", "[")("assignment-expression", $3)("punctuator", "]"); }
 | LSQB type-qualifier-list assignment-expression RSQB
-  {
-    $$.add("punctuator", "[");
-    $$.add_child("type-qualifier-list", $2);
-    $$.add_child("assignment-expression", $3);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("punctuator", "[")("type-qualifier-list", $2)("assignment-expression", $3)("punctuator", "]"); }
 | direct-abstract-declarator LSQB type-qualifier-list assignment-expression RSQB
-  {
-    $$.add_child("direct-abstract-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add_child("type-qualifier-list", $3);
-    $$.add_child("assignment-expression", $4);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-abstract-declarator", $1)("punctuator", "[")("type-qualifier-list", $3)("assignment-expression", $4)("punctuator", "]"); }
 | LSQB STATIC assignment-expression RSQB
-  {
-    $$.add("punctuator", "[");
-    $$.add("keyword", "static");
-    $$.add_child("assignment-expression", $3);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("punctuator", "[")("keyword", "static")("assignment-expression", $3)("punctuator", "]"); }
 | direct-abstract-declarator LSQB STATIC assignment-expression RSQB
-  {
-    $$.add_child("direct-abstract-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add("keyword", "static");
-    $$.add_child("assignment-expression", $4);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-abstract-declarator", $1)("punctuator", "[")("keyword", "static")("assignment-expression", $4)("punctuator", "]"); }
 | LSQB STATIC type-qualifier-list assignment-expression RSQB
-  {
-    $$.add("punctuator", "[");
-    $$.add("keyword", "static");
-    $$.add_child("type-qualifier-list", $3);
-    $$.add_child("assignment-expression", $4);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("punctuator", "[")("keyword", "static")("type-qualifier-list", $3)("assignment-expression", $4)("punctuator", "]"); }
 | direct-abstract-declarator LSQB STATIC type-qualifier-list assignment-expression RSQB
-  {
-    $$.add_child("direct-abstract-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add("keyword", "static");
-    $$.add_child("type-qualifier-list", $4);
-    $$.add_child("assignment-expression", $5);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-abstract-declarator", $1)("punctuator", "[")("keyword", "static")("type-qualifier-list", $4)("assignment-expression", $5)("punctuator", "]"); }
 | LSQB type-qualifier-list STATIC assignment-expression RSQB
-  {
-    $$.add("punctuator", "[");
-    $$.add_child("type-qualifier-list", $2);
-    $$.add("keyword", "static");
-    $$.add_child("assignment-expression", $4);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("punctuator", "[")("type-qualifier-list", $2)("keyword", "static")("assignment-expression", $4)("punctuator", "]"); }
 | direct-abstract-declarator LSQB type-qualifier-list STATIC assignment-expression RSQB
-  {
-    $$.add_child("direct-abstract-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add_child("type-qualifier-list", $3);
-    $$.add("keyword", "static");
-    $$.add_child("assignment-expression", $5);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-abstract-declarator", $1)("punctuator", "[")("type-qualifier-list", $3)("keyword", "static")("assignment-expression", $5)("punctuator", "]"); }
 | LSQB AST RSQB
-  {
-    $$.add("punctuator", "[");
-    $$.add("punctuator", "*");
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("punctuator", "[")("punctuator", "*")("punctuator", "]"); }
 | direct-abstract-declarator LSQB AST RSQB
-  {
-    $$.add_child("direct-abstract-declarator", $1);
-    $$.add("punctuator", "[");
-    $$.add("punctuator", "*");
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("direct-abstract-declarator", $1)("punctuator", "[")("punctuator", "*")("punctuator", "]"); }
 | LPAR RPAR
-  {
-    $$.add("punctuator", "(");
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("punctuator", "(")("punctuator", ")"); }
 | direct-abstract-declarator LPAR RPAR
-  {
-    $$.add_child("direct-abstract-declarator", $1);
-    $$.add("punctuator", "(");
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("direct-abstract-declarator", $1)("punctuator", "(")("punctuator", ")"); }
 | LPAR parameter-type-list RPAR
-  {
-    $$.add("punctuator", "(");
-    $$.add_child("parameter-type-list", $2);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("punctuator", "(")("parameter-type-list", $2)("punctuator", ")"); }
 | direct-abstract-declarator LPAR parameter-type-list RPAR
-  {
-    $$.add_child("direct-abstract-declarator", $1);
-    $$.add("punctuator", "(");
-    $$.add_child("parameter-type-list", $3);
-    $$.add("punctuator", ")");
-  }
+  { add_nodes($$)("direct-abstract-declarator", $1)("punctuator", "(")("parameter-type-list", $3)("punctuator", ")"); }
 ;
 
 initializer
 : assignment-expression
-  {
-    $$.add_child("assignment-expression", $1);
-  }
+  { add_nodes($$)("assignment-expression", $1); }
 | LCUB initializer-list RCUB
-  {
-    $$.add("punctuator", "{");
-    $$.add_child("initializer-list", $2);
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("punctuator", "{")("initializer-list", $2)("punctuator", "}"); }
 | LCUB identifier-list COMMA RCUB
-  {
-    $$.add("punctuator", "{");
-    $$.add_child("identifier-list", $2);
-    $$.add("punctuator", ",");
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("punctuator", "{")("identifier-list", $2)("punctuator", ",")("punctuator", "}"); }
 ;
 
 initializer-list
 : initializer
-  {
-    $$.add_child("initializer", $1);
-  }
+  { add_nodes($$)("initializer", $1); }
 | designation initializer
-  {
-    $$.add_child("designation", $1);
-    $$.add_child("initializer", $2);
-  }
+  { add_nodes($$)("designation", $1)("initializer", $2); }
 | initializer-list COMMA initializer
-  {
-    $$.add_child("initializer-list", $1);
-    $$.add("punctuator", ",");
-    $$.add_child("initializer", $3);
-  }
+  { add_nodes($$)("initializer-list", $1)("punctuator", ",")("initializer", $3); }
 | initializer-list COMMA designation initializer
-  {
-    $$.add_child("initializer-list", $1);
-    $$.add("punctuator", ",");
-    $$.add_child("designation", $3);
-    $$.add_child("initializer", $4);
-  }
+  { add_nodes($$)("initializer-list", $1)("punctuator", ",")("designation", $3)("initializer", $4); }
 ;
 
 designation
 : designation-list EQ
-  {
-    $$.add_child("designation-list", $1);
-    $$.add("punctuator", "=");
-  }
+  { add_nodes($$)("designation-list", $1)("punctuator", "="); }
 ;
 
 designation-list
 : designator
-  {
-    $$.add_child("designator", $1);
-  }
+  { add_nodes($$)("designator", $1); }
 | designation-list designator
-  {
-    $$.add_child("designation-list", $1);
-    $$.add_child("designator", $2);
-  }
+  { add_nodes($$)("designation-list", $1)("designator", $2); }
 ;
 
 designator
 : LSQB constant-expression RSQB
-  {
-    $$.add("punctuator", "[");
-    $$.add_child("constant-expression", $2);
-    $$.add("punctuator", "]");
-  }
+  { add_nodes($$)("punctuator", "[")("constant-expression", $2)("punctuator", "]"); }
 | PERIOD IDENTIFIER
-  {
-    $$.add("punctuator", ".");
-    $$.add("identifier", $2);
-  }
+  { add_nodes($$)("punctuator", ".")("identifier", $2); }
 ;
 
 static-assert-declaration
 : STATIC_ASSERT LPAR constant-expression COMMA STRING_LITERAL RPAR SEMI
-  {
-    $$.add("keyword", "_Static_assert");
-    $$.add("punctuator", "(");
-    $$.add_child("constant-expression", $3);
-    $$.add("punctuator", ",");
-    $$.add("string-literal", $5);
-    $$.add("punctuator", ")");
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("keyword", "_Static_assert")("punctuator", "(")("constant-expression", $3)("punctuator", ",")("string-literal", $5)("punctuator", ")")("punctuator", ";"); }
 ;
 
 statement
 : labeled-statement
-  {
-    $$.add_child("labeled-statement", $1);
-  }
+  { add_nodes($$)("labeled-statement", $1); }
 | compound-statement
-  {
-    $$.add_child("compound-statement", $1);
-  }
+  { add_nodes($$)("compound-statement", $1); }
 | expression-statement
-  {
-    $$.add_child("expression-statement", $1);
-  }
+  { add_nodes($$)("expression-statement", $1); }
 | selection-statement
-  {
-    $$.add_child("selection-statement", $1);
-  }
+  { add_nodes($$)("selection-statement", $1); }
 | iteration-statement
-  {
-    $$.add_child("iteration-statement", $1);
-  }
+  { add_nodes($$)("iteration-statement", $1); }
 | jump-statement
-  {
-    $$.add_child("jump-statement", $1);
-  }
+  { add_nodes($$)("jump-statement", $1); }
 ;
 
 labeled-statement
 : IDENTIFIER COLON statement
-  {
-    $$.add("identifier", $1);
-    $$.add("punctuator", ":");
-    $$.add_child("statement", $3);
-  }
+  { add_nodes($$)("identifier", $1)("punctuator", ":")("statement", $3); }
 | CASE constant-expression COLON statement
-  {
-    $$.add("keyword", "case");
-    $$.add_child("constant-expression", $2);
-    $$.add("punctuator", ":");
-    $$.add_child("statement", $4);
-  }
+  { add_nodes($$)("keyword", "case")("constant-expression", $2)("punctuator", ":")("statement", $4); }
 | DEFAULT COLON statement
-  {
-    $$.add("keyword", "default");
-    $$.add("punctuator", ":");
-    $$.add_child("statement", $3);
-  }
+  { add_nodes($$)("keyword", "default")("punctuator", ":")("statement", $3); }
 ;
 
 compound-statement
 : LCUB RCUB
-  {
-    $$.add("punctuator", "{");
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("punctuator", "{")("punctuator", "}"); }
 | LCUB block-item-list RCUB
-  {
-    $$.add("punctuator", "{");
-    $$.add_child("block-item-list", $2);
-    $$.add("punctuator", "}");
-  }
+  { add_nodes($$)("punctuator", "{")("block-item-list", $2)("punctuator", "}"); }
 ;
 
 block-item-list
 : block-item
-  {
-    $$.add_child("block-item", $1);
-  }
+  { add_nodes($$)("block-item", $1); }
 | block-item-list block-item
-  {
-    $$.add_child("block-item-list", $1);
-    $$.add_child("block-item", $2);
-  }
+  { add_nodes($$)("block-item-list", $1)("block-item", $2); }
 ;
 
 block-item
 : declaration
-  {
-    $$.add_child("declaration", $1);
-  }
+  { add_nodes($$)("declaration", $1); }
 | statement
-  {
-    $$.add_child("statement", $1);
-  }
+  { add_nodes($$)("statement", $1); }
 ;
 
 expression-statement
 : SEMI
-  {
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("punctuator", ";"); }
 | expression SEMI
-  {
-    $$.add_child("expression", $1);
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("expression", $1)("punctuator", ";"); }
 ;
 
 selection-statement
 : IF LPAR expression RPAR statement
-  {
-    $$.add("keyword", "if");
-    $$.add("punctuator", "(");
-    $$.add_child("expression", $3);
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $5);
-  }
+  { add_nodes($$)("keyword", "if")("punctuator", "(")("expression", $3)("punctuator", ")")("statement", $5); }
 | IF LPAR expression RPAR statement ELSE statement
-  {
-    $$.add("keyword", "if");
-    $$.add("punctuator", "(");
-    $$.add_child("expression", $3);
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $5);
-    $$.add("keyword", "else");
-    $$.add_child("statement", $7);
-  }
+  { add_nodes($$)("keyword", "if")("punctuator", "(")("expression", $3)("punctuator", ")")("statement", $5)("keyword", "else")("statement", $7); }
 | SWITCH LPAR expression RPAR statement
-  {
-    $$.add("keyword", "switch");
-    $$.add("punctuator", "(");
-    $$.add_child("expression", $3);
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $5);
-  }
+  { add_nodes($$)("keyword", "switch")("punctuator", "(")("expression", $3)("punctuator", ")")("statement", $5); }
 ;
 
 iteration-statement
 : WHILE LPAR expression RPAR statement
-  {
-    $$.add("keyword", "while");
-    $$.add("punctuator", "(");
-    $$.add_child("expression", $3);
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $5);
-  }
+  { add_nodes($$)("keyword", "while")("punctuator", "(")("expression", $3)("punctuator", ")")("statement", $5); }
 | DO statement WHILE LPAR expression RPAR SEMI
-  {
-    $$.add("keyword", "do");
-    $$.add_child("statement", $2);
-    $$.add("keyword", "while");
-    $$.add("punctuator", "(");
-    $$.add_child("expression", $5);
-    $$.add("punctuator", ")");
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("keyword", "do")("statement", $2)("keyword", "while")("punctuator", "(")("expression", $5)("punctuator", ")")("punctuator", ";"); }
 | FOR LPAR SEMI SEMI RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add("punctuator", ";");
-    $$.add("punctuator", ";");
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $6);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("punctuator", ";")("punctuator", ";")("punctuator", ")")("statement", $6); }
 | FOR LPAR expression SEMI SEMI RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add_child("expression", $3);
-    $$.add("punctuator", ";");
-    $$.add("punctuator", ";");
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $7);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("expression", $3)("punctuator", ";")("punctuator", ";")("punctuator", ")")("statement", $7); }
 | FOR LPAR SEMI expression SEMI RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add("punctuator", ";");
-    $$.add_child("expression", $4);
-    $$.add("punctuator", ";");
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $7);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("punctuator", ";")("expression", $4)("punctuator", ";")("punctuator", ")")("statement", $7); }
 | FOR LPAR SEMI SEMI expression RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add("punctuator", ";");
-    $$.add("punctuator", ";");
-    $$.add_child("expression", $5);
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $7);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("punctuator", ";")("punctuator", ";")("expression", $5)("punctuator", ")")("statement", $7); }
 | FOR LPAR expression SEMI expression SEMI RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add_child("expression", $3);
-    $$.add("punctuator", ";");
-    $$.add_child("expression", $5);
-    $$.add("punctuator", ";");
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $8);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("expression", $3)("punctuator", ";")("expression", $5)("punctuator", ";")("punctuator", ")")("statement", $8); }
 | FOR LPAR expression SEMI SEMI expression RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add_child("expression", $3);
-    $$.add("punctuator", ";");
-    $$.add("punctuator", ";");
-    $$.add_child("expression", $6);
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $8);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("expression", $3)("punctuator", ";")("punctuator", ";")("expression", $6)("punctuator", ")")("statement", $8); }
 | FOR LPAR SEMI expression SEMI expression RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add("punctuator", ";");
-    $$.add_child("expression", $4);
-    $$.add("punctuator", ";");
-    $$.add_child("expression", $6);
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $8);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("punctuator", ";")("expression", $4)("punctuator", ";")("expression", $6)("punctuator", ")")("statement", $8); }
 | FOR LPAR expression SEMI expression SEMI expression RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add_child("expression", $3);
-    $$.add("punctuator", ";");
-    $$.add_child("expression", $5);
-    $$.add("punctuator", ";");
-    $$.add_child("expression", $7);
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $9);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("expression", $3)("punctuator", ";")("expression", $5)("punctuator", ";")("expression", $7)("punctuator", ")")("statement", $9); }
 | FOR LPAR declaration SEMI RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add_child("declaration", $3);
-    $$.add("punctuator", ";");
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $6);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("declaration", $3)("punctuator", ";")("punctuator", ")")("statement", $6); }
 | FOR LPAR declaration expression SEMI RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add_child("declaration", $3);
-    $$.add_child("expression", $4);
-    $$.add("punctuator", ";");
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $7);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("declaration", $3)("expression", $4)("punctuator", ";")("punctuator", ")")("statement", $7); }
 | FOR LPAR declaration SEMI expression RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add_child("declaration", $3);
-    $$.add("punctuator", ";");
-    $$.add_child("expression", $5);
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $7);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("declaration", $3)("punctuator", ";")("expression", $5)("punctuator", ")")("statement", $7); }
 | FOR LPAR declaration expression SEMI expression RPAR statement
-  {
-    $$.add("keyword", "for");
-    $$.add("punctuator", "(");
-    $$.add_child("declaration", $3);
-    $$.add_child("expression", $4);
-    $$.add("punctuator", ";");
-    $$.add_child("expression", $6);
-    $$.add("punctuator", ")");
-    $$.add_child("statement", $8);
-  }
+  { add_nodes($$)("keyword", "for")("punctuator", "(")("declaration", $3)("expression", $4)("punctuator", ";")("expression", $6)("punctuator", ")")("statement", $8); }
 ;
 
 jump-statement
 : GOTO IDENTIFIER SEMI
-  {
-    $$.add("keyword", "goto");
-    $$.add("identifier", $2);
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("keyword", "goto")("identifier", $2)("punctuator", ";"); }
 | CONTINUE SEMI
-  {
-    $$.add("keyword", "continue");
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("keyword", "continue")("punctuator", ";"); }
 | BREAK SEMI
-  {
-    $$.add("keyword", "break");
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("keyword", "break")("punctuator", ";"); }
 | RETURN SEMI
-  {
-    $$.add("keyword", "return");
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("keyword", "return")("punctuator", ";"); }
 | RETURN expression SEMI
-  {
-    $$.add("keyword", "return");
-    $$.add_child("expression", $2);
-    $$.add("punctuator", ";");
-  }
+  { add_nodes($$)("keyword", "return")("expression", $2)("punctuator", ";"); }
 ;
 
 translation-unit
 : external-declaration
-  {
-    $$.add_child("external-declaration", $1);
-    result = ptree();
-    result.add_child("translation-unit", $$);
+  { add_nodes($$)("external-declaration", $1);
+    result = ptree(); result.add_child("translation-unit", $$);
   }
 | translation-unit external-declaration
-  {
-    $$.add_child("translation-unit", $1);
-    $$.add_child("external-declaration", $2);
-    result = ptree();
-    result.add_child("translation-unit", $$);
-  }
+  { add_nodes($$)("translation-unit", $1)("external-declaration", $2);
+    result = ptree(); result.add_child("translation-unit", $$); }
 ;
 
 external-declaration
 : function-definition
-  {
-    $$.add_child("function-definition", $1);
-  }
+  { add_nodes($$)("function-definition", $1); }
 | declaration
-  {
-    $$.add_child("declaration", $1);
-  }
+  { add_nodes($$)("declaration", $1); }
 ;
 
 function-definition
 : declaration-specifiers declarator compound-statement
-  {
-    $$.add_child("declaration-specifiers", $1);
-    $$.add_child("declarator", $2);
-    $$.add_child("compound-statement", $3);
-  }
+  { add_nodes($$)("declaration-specifiers", $1)("declarator", $2)("compound-statement", $3); }
 | declaration-specifiers declarator declaration-list compound-statement
-  {
-    $$.add_child("declaration-specifiers", $1);
-    $$.add_child("declarator", $2);
-    $$.add_child("declaration-list", $3);
-    $$.add_child("compound-statement", $4);
-  }
+  { add_nodes($$)("declaration-specifiers", $1)("declarator", $2)("declaration-list", $3)("compound-statement", $4); }
 ;
 
 declaration-list
 : declaration
-  {
-    $$.add_child("declaration", $1);
-  }
+  { add_nodes($$)("declaration", $1); }
 | declaration-list declaration
-  {
-    $$.add_child("declaration-list", $1);
-    $$.add_child("declaration", $2);
-  }
+  { add_nodes($$)("declaration-list", $1)("declaration", $2); }
 ;
 
 %%
@@ -1946,15 +963,15 @@ auto add_typedef_names_init_declarator_list(ptree const& init_declarator_list) -
   add_typedef_names_init_declarator(init_declarator_list.get_child("init-declarator"));
 }
 
-static auto add_typedef_names_init_declarator(ptree const& init_declarator) -> void {
+auto add_typedef_names_init_declarator(ptree const& init_declarator) -> void {
   add_typedef_names_declarator(init_declarator.get_child("declarator"));
 }
 
-static auto add_typedef_names_declarator(ptree const& declarator) -> void {
+auto add_typedef_names_declarator(ptree const& declarator) -> void {
   add_typedef_names_direct_declarator(declarator.get_child("direct-declarator"));
 }
 
-static auto add_typedef_names_direct_declarator(ptree const& direct_declarator) -> void {
+auto add_typedef_names_direct_declarator(ptree const& direct_declarator) -> void {
   if (auto const x = direct_declarator.get_child_optional("identifier")) {
     add_typedef_name(x->get_value<std::string>());
   } else if (auto const x = direct_declarator.get_child_optional("declarator")) {
@@ -1962,6 +979,18 @@ static auto add_typedef_names_direct_declarator(ptree const& direct_declarator) 
   } else if (auto const x = direct_declarator.get_child_optional("direct-declarator")) {
     add_typedef_names_direct_declarator(*x);
   }
+}
+
+add_nodes::add_nodes(ptree& target): target(target) {}
+
+auto add_nodes::operator()(std::string const& key, ptree const& child) -> add_nodes& {
+  target.add_child(key, child);
+  return *this;
+}
+
+auto add_nodes::operator()(std::string const& key, std::string const& value) -> add_nodes& {
+  target.add(key, value);
+  return *this;
 }
 
 /* vim: set ft=yacc ts=2 sw=2 et: */
