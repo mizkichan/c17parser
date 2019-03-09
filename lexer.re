@@ -91,7 +91,17 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
       octal_constant        = "0" octal_digit*;
       hexadecimal_constant  = hexadecimal_prefix hexadecimal_digit+;
 
-      // TODO floating-constant
+      sign                  = [+-];
+      digit_sequence        = digit+;
+      floating_suffix       = ( "f" | "l" );
+      hexadecimal_digit_sequence  = hexadecimal_digit+;
+      binary_exponent_part  = ( 'p' sign? digit_sequence );
+      hexadecimal_fractional_constant = ( hexadecimal_digit_sequence? "." hexadecimal_digit_sequence | hexadecimal_digit_sequence "." );
+      exponent_part         = ( 'e' sign? digit_sequence );
+      fractional_constant   = ( digit_sequence? "." digit_sequence | digit_sequence "." );
+      hexadecimal_floating_constant = ( hexadecimal_prefix hexadecimal_fractional_constant binary_exponent_part floating_suffix? | hexadecimal_prefix hexadecimal_digit_sequence binary_exponent_part floating_suffix? );
+      decimal_floating_constant = ( fractional_constant exponent_part? floating_suffix? | digit_sequence exponent_part floating_suffix? );
+      floating_constant     = ( decimal_floating_constant | hexadecimal_floating_constant );
 
       c_char                = ( [^'\\] | escape_sequence );
       c_char_sequence       = c_char+;
@@ -197,6 +207,7 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
       decimal_constant      { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
       octal_constant        { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
       hexadecimal_constant  { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
+      floating_constant     { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::FLOATING_CONSTANT; break; }
       character_constant    { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::CHARACTER_CONSTANT; break; }
       string_literal        { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::STRING_LITERAL; break; }
 
