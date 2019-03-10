@@ -6,7 +6,7 @@ class add_nodes {
   ptree& target;
 public:
   add_nodes(ptree &);
-  auto operator()(std::string const&, ptree const&) -> add_nodes&;
+  auto operator()(std::string const&, ptree&&) -> add_nodes&;
   auto operator()(std::string const&, std::string const&) -> add_nodes&;
 };
 }
@@ -399,11 +399,11 @@ declaration
 | declaration-specifiers init-declarator-list SEMI
   {
     auto&& _1 = $1; auto&& _2 = $2;
-    add_nodes($$)("declaration-specifiers", _1)("init-declarator-list", _2)("punctuator", ";");
     // Do the lexer hack
-    if (_1.get<std::string>("storage-class-specifier.keyword") == "typedef") {
+    if (auto const keyword = _1.get_optional<std::string>("storage-class-specifier.keyword") ) if (*keyword == "typedef") {
       add_typedef_names(_2);
     }
+    add_nodes($$)("declaration-specifiers", std::move(_1))("init-declarator-list", std::move(_2))("punctuator", ";");
   }
 | static-assert-declaration
   { add_nodes($$)("static-assert-declaration", $1); }
@@ -988,8 +988,8 @@ auto add_typedef_names_direct_declarator(ptree const& direct_declarator) -> void
 
 add_nodes::add_nodes(ptree& target): target(target) {}
 
-auto add_nodes::operator()(std::string const& key, ptree const& child) -> add_nodes& {
-  target.add_child(key, child);
+auto add_nodes::operator()(std::string const& key, ptree&& child) -> add_nodes& {
+  target.add_child(key, std::move(child));
   return *this;
 }
 

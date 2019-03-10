@@ -3,15 +3,13 @@
 
 static auto check_type(std::string const &, yy::parser::semantic_type *)
     -> yy::parser::token::yytokentype;
-template <typename T>
-static auto check_type(T, T, yy::parser::semantic_type *)
-    -> yy::parser::token::yytokentype;
 static auto is_enumeration_constant(std::string const &) -> bool;
 static auto is_typedef_name(std::string const &) -> bool;
 
 static std::unordered_set<std::string> enum_consts;
 static std::unordered_set<std::string> typedef_names = {
-    "__builtin_va_list",
+    "_Float128", "_Float32",  "_Float32x",
+    "_Float64",  "_Float64x", "__builtin_va_list",
 };
 
 std::istream *input = &std::cin;
@@ -19,50 +17,45 @@ std::optional<std::string> filename;
 
 auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
     -> int {
-  using YYCTYPE = std::string::value_type;
-  using iterator = std::string::const_iterator;
+  using YYCTYPE = char;
 
-  static std::string line;
+  static std::size_t YYCURSOR = 0;
+  static const std::string ss = [] {
+    std::stringstream ss;
+    ss << input->rdbuf();
+    return ss.str();
+  }();
   static size_t lineno = 0;
-  yy::parser::token::yytokentype token;
-
-#define YYLIMIT line.cend()
-#define YYFILL                                                                 \
-  if (YYCURSOR == line.cend()) {                                               \
-    do {                                                                       \
-      if (!std::getline(*input, line)) {                                       \
-        return yy::parser::token::END_OF_FILE;                                 \
-      }                                                                        \
-      ++lineno;                                                                \
-    } while (line.empty());                                                    \
-    YYCURSOR = line.cbegin();                                                  \
-  }
+  static size_t column = 0;
 
   // clang-format off
   /*!re2c
     re2c:flags:posix-captures = 1;
     re2c:flags:input = custom;
-    re2c:define:YYFILL:naked = 1;
+    re2c:yyfill:enable = 0;
   */
-  /*!stags:re2c format = 'iterator @@;'; */
+  /*!stags:re2c format = 'std::size_t @@;'; */
   /*!maxnmatch:re2c*/
   // clang-format on
 
-  static auto YYCURSOR = line.cbegin();
-  std::array<iterator, YYMAXNMATCH * 2> yypmatch;
+  yy::parser::token::yytokentype token;
+  std::size_t yynmatch;
+  std::array<std::size_t, YYMAXNMATCH * 2> yypmatch;
+  std::size_t YYMARKER;
 
-  iterator YYMARKER;
-  size_t yynmatch;
-
-  auto const YYPEEK = []() { return *YYCURSOR; };
-  auto const YYSKIP = []() { ++YYCURSOR; };
-  auto const YYBACKUP = [&]() { YYMARKER = YYCURSOR; };
-  auto const YYRESTORE = [&]() { YYCURSOR = YYMARKER; };
-  auto const YYLESSTHAN = [](auto const &n) {
-    return std::distance(YYCURSOR, YYLIMIT) < n;
-  };
-  auto const YYSTAGP = [](auto &t) { t = YYCURSOR; };
-  auto const YYSTAGN = [](auto &t) { t = line.cend(); };
+  auto const YYPEEK = [&] { return ss[YYCURSOR]; };
+#define YYSKIP()                                                               \
+  do {                                                                         \
+    ++YYCURSOR;                                                                \
+    ++column;                                                                  \
+    if (!YYPEEK()) {                                                           \
+      return yy::parser::token::END_OF_FILE;                                   \
+    }                                                                          \
+  } while (false)
+  auto const YYBACKUP = [&] { YYMARKER = YYCURSOR; };
+  auto const YYRESTORE = [&] { YYCURSOR = YYMARKER; };
+  auto const YYSTAGP = [&](auto &t) { t = YYCURSOR; };
+  auto const YYSTAGN = [](auto &t) { t = std::string::npos; };
 
   while (true) {
     // clang-format off
@@ -206,22 +199,23 @@ auto yylex(yy::parser::semantic_type *lval, yy::parser::location_type *location)
       "}"   { token = yy::parser::token::RCUB; break; }
       "~"   { token = yy::parser::token::TILDE; break; }
 
-      identifier            { token = check_type(yypmatch[0], yypmatch[1], lval); break; }
-      integer_constant      { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::INTEGER_CONSTANT; break; }
-      floating_constant     { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::FLOATING_CONSTANT; break; }
-      character_constant    { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::CHARACTER_CONSTANT; break; }
-      string_literal        { lval->emplace<std::string>(std::string(yypmatch[0], yypmatch[1])); token = yy::parser::token::STRING_LITERAL; break; }
+      identifier            { token = check_type(ss.substr(yypmatch[0], yypmatch[1] - yypmatch[0]), lval); break; }
+      integer_constant      { lval->emplace<std::string>(ss.substr(yypmatch[0], yypmatch[1] - yypmatch[0])); token = yy::parser::token::INTEGER_CONSTANT; break; }
+      floating_constant     { lval->emplace<std::string>(ss.substr(yypmatch[0], yypmatch[1] - yypmatch[0])); token = yy::parser::token::FLOATING_CONSTANT; break; }
+      character_constant    { lval->emplace<std::string>(ss.substr(yypmatch[0], yypmatch[1] - yypmatch[0])); token = yy::parser::token::CHARACTER_CONSTANT; break; }
+      string_literal        { lval->emplace<std::string>(ss.substr(yypmatch[0], yypmatch[1] - yypmatch[0])); token = yy::parser::token::STRING_LITERAL; break; }
 
       [ \t\v\f]+  { continue; }
+      "\n"        { ++lineno; column = 0; continue; }
 
-      * { throw yy::parser::syntax_error(*location, std::string(YYCURSOR, YYCURSOR + 1)); }
+      * { throw yy::parser::syntax_error(*location, NULL); }
     */
-    // clang-format off
+    // clang-format on
   }
 
   location->begin.line = location->end.line = lineno;
-  location->begin.column = std::distance(line.cbegin(), yypmatch[0]) + 1;
-  location->end.column = std::distance(line.cbegin(), yypmatch[1]) + 1;
+  location->begin.column = column;
+  location->end.column = column + yypmatch[1] - yypmatch[0];
   return token;
 }
 
@@ -235,12 +229,6 @@ auto check_type(std::string const &id, yy::parser::semantic_type *const lval)
   } else {
     return yy::parser::token::IDENTIFIER;
   }
-}
-
-template <typename T>
-auto check_type(T begin, T end, yy::parser::semantic_type *lval)
-    -> yy::parser::token::yytokentype {
-  return check_type(std::string(begin, end), lval);
 }
 
 auto add_enumeration_constant(std::string &&id) -> void {

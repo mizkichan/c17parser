@@ -12,7 +12,7 @@ lexer.o: lexer.cpp parser.tab.hpp
 parser.tab.o: parser.tab.cpp
 
 %: %.o
-	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
+	$(CXX) $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -o $@
 
 %.o: %.cpp
 	$(CXX) $< $(CXXFLAGS) $(CPPFLAGS) -c -o $@

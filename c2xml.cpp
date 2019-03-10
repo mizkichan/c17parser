@@ -54,15 +54,15 @@ extern auto main(int argc, char **argv) -> int {
     input = new std::ifstream(filename->c_str());
   }
 
-  auto output = &std::cout;
-  if (options.count("output")) {
-    output = new std::ofstream(options["output"].as<std::string>());
-  }
-
   ptree result;
   auto yyparse = yy::parser(result);
   yyparse.set_debug_level(options.count("verbose"));
   if (yyparse() == 0) {
+    auto output = &std::cout;
+    if (options.count("output")) {
+      output = new std::ofstream(options["output"].as<std::string>());
+    }
+
     boost::property_tree::write_xml(
         *output, result,
         boost::property_tree::xml_writer_make_settings<ptree::key_type>(' ',
