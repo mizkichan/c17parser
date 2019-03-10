@@ -194,6 +194,12 @@ Then you will get this XML:
 </translation-unit>
 ```
 
-Note that `c2xml` input source code must be preprocessed; that is, input code should not include preprocessor directives, such as `#include` and `#define`.
+Note that `c2xml` input source code must be preprocessed; that is, input code should not include preprocessor directives, such as `#include` or `#define`.
+
+## Things to be done
+
+- Make `c2xml` at least ignore preprocessor directives so that users can achieve their goals faster.
+- Implement string literal concatenation, for C preprocessors seem not to do it.
+- `__attribute__`, `__asm__`, `__restrict`, `__inline`, etc.
 
 I will appreciate any form of your contribution or cooperation.
