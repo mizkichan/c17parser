@@ -5,6 +5,10 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <fstream>
 
+#ifndef VERSION
+#define VERSION ""
+#endif
+
 using ptree = boost::property_tree::ptree;
 
 extern auto main(int argc, char **argv) -> int {
@@ -17,9 +21,11 @@ extern auto main(int argc, char **argv) -> int {
   auto visible = options_description();
   // clang-format off
   visible.add_options()
-    ("help,h", "Show help")
+    ("output,o", value<std::string>(), "Output file path")
     ("verbose,v", "Get verbose")
-    ("output,o", value<std::string>(), "Output file path");
+    ("help,h", "Show help")
+    ("version,V", "Show version information")
+    ;
   // clang-format on
 
   // clang-format off
@@ -46,6 +52,11 @@ extern auto main(int argc, char **argv) -> int {
     std::cout << "Usage: " << argv[0] << " [options] [file]" << std::endl
               << "Options: " << std::endl
               << visible;
+    return EXIT_SUCCESS;
+  }
+
+  if (options.count("version")) {
+    std::cout << "c2xml " << VERSION << std::endl;
     return EXIT_SUCCESS;
   }
 

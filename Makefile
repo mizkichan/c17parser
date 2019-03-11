@@ -11,6 +11,8 @@ c2xml.o: c2xml.cpp parser.tab.hpp
 lexer.o: lexer.cpp parser.tab.hpp
 parser.tab.o: parser.tab.cpp
 
+c2xml.o: CPPFLAGS += -DVERSION='"r$(shell git rev-list --count HEAD)"'
+
 %: %.o
 	$(CXX) $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -o $@
 
